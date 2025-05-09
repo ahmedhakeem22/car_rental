@@ -1,8 +1,12 @@
 <?php
-session_start(); // بدء الجلسة
-require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
+
+// Page specific configurations
+$page_title = "Login";
+require_once __DIR__ . '/includes/config.php'; // Ensures session is started and APP_URL etc. are available
+require_once __DIR__ . '/includes/db_connect.php'; // Provides $pdo for this page's logic
 
 // التحقق مما إذا كان المستخدم مسجل الدخول بالفعل
+// This check must happen BEFORE any HTML output (i.e., before including header.php)
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php"); // إعادة التوجيه إلى لوحة القيادة إذا كان مسجل الدخول
     exit();
@@ -12,98 +16,54 @@ $error = '';
 
 // معالجة نموذج تسجيل الدخول عند الإرسال
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // لا تستخدم htmlspecialchars هنا، خاصة لكلمة المرور.
-    // htmlspecialchars للإيميل يمكن أن يكون مقبولاً إذا كنت ستعرضه مرة أخرى في النموذج عند الخطأ
-    // ولكن لا تحتاجه للمقارنة مع قاعدة البيانات.
     $email = trim($_POST['email']);
-    $password = $_POST['password']; // لا تستخدم htmlspecialchars لكلمة المرور
+    $password = $_POST['password'];
 
-    // التحقق من المدخلات
     if (empty($email) || empty($password)) {
         $error = "Please enter both email and password.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email format.";
     } else {
         try {
-            // البحث عن المستخدم في قاعدة البيانات باستخدام PDO
-            $stmt = $pdo->prepare("SELECT id, name, password FROM users WHERE email = :email");
-            // يمكنك استخدام bindParam أو تمرير مصفوفة إلى execute
-            // $stmt->bindParam(':email', $email);
-            // $stmt->execute();
-            // أو الطريقة المختصرة:
+            $stmt = $pdo->prepare("SELECT id, name, password, email FROM users WHERE email = :email");
             $stmt->execute(['email' => $email]);
-
-            $user = $stmt->fetch(PDO::FETCH_ASSOC); // جلب المستخدم كـ مصفوفة ترابطية
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user) {
-                // التحقق من كلمة المرور
-                // $password هي كلمة المرور التي أدخلها المستخدم
-                // $user['password'] هي كلمة المرور المجزأة من قاعدة البيانات
                 if (password_verify($password, $user['password'])) {
-                    // تسجيل الدخول بنجاح
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_name'] = $user['name'];
-                    // يمكنك إضافة المزيد من معلومات المستخدم إلى الجلسة إذا لزم الأمر
+                    // Store email in session if you need it globally, e.g., for a profile page
+                    // $_SESSION['user_email'] = $user['email'];
 
-                    // إعادة التوجيه إلى صفحة لوحة القيادة أو أي صفحة بعد تسجيل الدخول
                     header("Location: dashboard.php");
                     exit();
                 } else {
-                    // كلمة المرور غير صحيحة
-                    $error = "Invalid email or password."; // رسالة عامة لأمان أفضل
+                    $error = "Invalid email or password.";
                 }
             } else {
-                // المستخدم غير موجود
-                $error = "Invalid email or password."; // رسالة عامة لأمان أفضل
+                $error = "Invalid email or password.";
             }
         } catch (PDOException $e) {
-            error_log("Login PDOException: " . $e->getMessage()); // سجل الخطأ الفعلي للمطور
+            error_log("Login PDOException: " . $e->getMessage());
             $error = "An error occurred during login. Please try again later.";
-            // die("Database query failed: " . $e->getMessage()); // للتصحيح فقط، لا تستخدم die في الإنتاج
         }
     }
-  
 }
+
+// Now include the header
+require_once __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
 
-    <link rel="stylesheet" href="assets/css/styles.css">
-     <style>
-        .error-message {
-            color: red;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <nav class="navbar">
-            <div class="logo">
-                <img src="assets/images/logo.png" alt="Your Logo">
-            </div>
-            <ul>
-                <li><a href="#">Cars</a></li>
-                <li><a href="#">Discover</a></li>
-                <li><a href="#">Gallery</a></li>
-                <li><a href="#">Templates</a></li>
-                <li><a href="#">Updates</a></li>
-                <li><a href="register.php">Register</a></li> 
-            </ul>
-        </nav>
-
+        <?php // The navbar is now in header.php. We start with the login-container. ?>
         <div class="login-container">
             <h1>Sign in</h1>
             <p class="register-text">Don't have an account yet? <a href="register.php">Register here</a></p>
 
             <?php
             if ($error) {
-                echo '<p class="error-message">' . $error . '</p>';
+                // The .error-message class is now styled in header.php or your main styles.css
+                echo '<p class="error-message">' . htmlspecialchars($error) . '</p>';
             }
             ?>
 
@@ -115,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <span>or</span>
             </div>
 
-            <form action="login.php" method="POST" class="login-form">
+            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" class="login-form">
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" name="email" placeholder="Enter your email" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
@@ -126,18 +86,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="password" name="password" placeholder="Enter your password" required>
                 </div>
 
-              
-                 <div class="checkbox-group">
+                <div class="checkbox-group">
                     <input type="checkbox" id="terms" name="terms">
-                    <label for="terms">Remember Me (Optional, requires more logic)</label>
+                    <label for="terms">Remember Me</label> <?php // Simplified message, actual logic for "Remember Me" is more complex ?>
                 </div>
 
                 <button type="submit" class="login-btn">Login</button>
             </form>
 
             <p class="forgot-password">Forgot password? <a href="forgot_password.php" class="reset-link">Reset</a></p>
-          
+
         </div>
-    </div>
-</body>
-</html>
+
+<?php
+// Include the footer
+require_once __DIR__ . '/includes/footer.php';
+?>

@@ -1,153 +1,113 @@
 <?php
-session_start(); // بدء الجلسة
+// File: C:\Users\Zainon\Herd\car_rental\forgot_password.php
+
+// 1. إعدادات الصفحة والمتطلبات الأساسية
+$page_title = "Forgot Your Password";
+// لا حاجة لـ $page_specific_css إذا كانت كل الستايلات في styles.css
+
+// config.php (يبدأ الجلسة ويحدد الثوابت) يتم تضمينه عبر header.php
+// لكننا نحتاج إلى db_connect.php هنا لمنطق البحث عن المستخدم
+require_once __DIR__ . '/includes/config.php'; // لضمان APP_URL والجلسة
 require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
 
-$message = '';
-$error = '';
+// التحقق مما إذا كان المستخدم مسجلاً دخوله بالفعل، إذا كان كذلك، وجهه إلى لوحة التحكم
+if (isset($_SESSION['user_id'])) {
+    header("Location: " . APP_URL . "dashboard.php");
+    exit();
+}
 
-// معالجة نموذج طلب إعادة تعيين كلمة المرور
+$message = ''; // لرسائل إعلامية عامة (ليست أخطاء)
+$error = '';   // لرسائل الخطأ
+
+// عرض رسالة الخطأ إذا تم تمريرها من صفحة reset_password.php (مثلاً، عند انتهاء الجلسة هناك)
+if (isset($_SESSION['forgot_password_error'])) {
+    $error = $_SESSION['forgot_password_error'];
+    unset($_SESSION['forgot_password_error']); // امسحها بعد العرض
+}
+
+
+// 2. معالجة نموذج طلب إعادة تعيين كلمة المرور
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // لا تحتاج إلى htmlspecialchars هنا، ولكن trim جيد
-    $email = trim($_POST['email']);
+    $email_input = trim($_POST['email']);
 
-    // التحقق من المدخلات
-    if (empty($email)) {
+    if (empty($email_input)) {
         $error = "Please enter your email address.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } elseif (!filter_var($email_input, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email format.";
     } else {
         try {
-            // البحث عن المستخدم في قاعدة البيانات باستخدام PDO
-            $stmt = $pdo->prepare("SELECT id, security_question FROM users WHERE email = :email");
-            // $stmt->bindParam(':email', $email);
-            // $stmt->execute();
-            // أو الطريقة المختصرة:
-            $stmt->execute(['email' => $email]);
-
-            $user = $stmt->fetch(PDO::FETCH_ASSOC); // جلب المستخدم كـ مصفوفة ترابطية
+            // تأكد من أن جدول users يحتوي على الأعمدة id, email, security_question
+            // وأن security_question يتم ملؤه عند تسجيل المستخدم
+            $stmt = $pdo->prepare("SELECT id, email, security_question FROM users WHERE email = :email");
+            $stmt->execute(['email' => $email_input]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user) {
-                // المستخدم موجود، تخزين معلومات المستخدم وسؤال الأمان في الجلسة
-                $_SESSION['reset_user_id'] = $user['id'];
-                $_SESSION['reset_user_email'] = $email; // يمكنك أيضًا استخدام $user['email'] إذا كان اسم العمود مختلفًا
-                $_SESSION['reset_security_question'] = $user['security_question'];
+                // المستخدم موجود
+                if (empty($user['security_question'])) {
+                    // حالة نادرة: المستخدم موجود ولكن ليس لديه سؤال أمان (خطأ في البيانات أو عملية تسجيل قديمة)
+                    $error = "Password reset via security question is not available for this account. Please contact support.";
+                } else {
+                    // تخزين معلومات المستخدم وسؤال الأمان في الجلسة
+                    $_SESSION['reset_user_id'] = $user['id'];
+                    $_SESSION['reset_user_email'] = $user['email']; // استخدام البريد الإلكتروني من قاعدة البيانات لضمان الدقة
+                    $_SESSION['reset_security_question'] = $user['security_question'];
 
-                // إعادة التوجيه إلى صفحة إعادة تعيين كلمة المرور
-                header("Location: reset_password.php");
-                exit();
+                    // إعادة التوجيه إلى صفحة إعادة تعيين كلمة المرور
+                    header("Location: " . APP_URL . "reset_password.php");
+                    exit();
+                }
             } else {
-                // المستخدم غير موجود - رسالة عامة لأمان أفضل
-                // يمكنك اختيار عرض رسالة خطأ مباشرة أو رسالة عامة
-                // $error = "No account found with that email address.";
-                $message = "If an account with that email exists, instructions to reset your password have been sent (or you will be prompted for your security question on the next page).";
-                // عمليًا، إذا كان المستخدم غير موجود، لا يجب أن تنتقل إلى الخطوة التالية.
-                // الرسالة أعلاه هي أكثر غموضًا لأسباب أمنية، لكن في نظام سؤال الأمان، الخطأ المباشر قد يكون مقبولاً.
-                // إذا كنت تريد أن تكون الرسالة دائمًا "If an account...", فضعها خارج الشرط.
-                // في هذا السيناريو، إذا لم يتم العثور على المستخدم، يجب أن تظهر رسالة خطأ بدلًا من الرسالة العامة ثم لا شيء.
-                $error = "No account found with that email address. Please check your input.";
+                // المستخدم غير موجود
+                $error = "No account found with that email address. Please check your input or <a href='" . APP_URL . "register.php'>register</a> for a new account.";
             }
         } catch (PDOException $e) {
             error_log("Forgot Password PDOException: " . $e->getMessage());
-            $error = "An error occurred. Please try again later.";
-            // die("Database query failed: " . $e->getMessage()); // للتصحيح فقط
+            $error = "An error occurred while trying to find your account. Please try again later. (Code: DB_FORGOT_FAIL)";
         }
     }
-  
 }
-// If GET request or POST failed, the HTML form will be displayed below.
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <style>
-        /* Reuse some login styles */
-        .login-container {
-            max-width: 400px;
-            margin: 50px auto; /* Add some margin top/bottom */
-        }
-        .forgot-form input[type="email"] {
-             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-         .submit-btn { /* Same as login-btn */
-            width: 100%;
-            padding: 12px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-         .submit-btn:hover {
-             background: #555;
-        }
-        .message {
-            text-align: center;
-            margin-bottom: 15px;
-             color: green;
-        }
-         .error-message {
-            color: red;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-         h1 {
-             text-align: center;
-             margin-bottom: 20px;
-         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <nav class="navbar">
-             <div class="logo">
-                <img src="assets/images/logo.png" alt="Your Logo">
-            </div>
-            <ul>
-                <li><a href="#">Cars</a></li>
-                <li><a href="#">Discover</a></li>
-                <li><a href="#">Gallery</a></li>
-                <li><a href="#">Templates</a></li>
-                <li><a href="#">Updates</a></li>
-                 <li><a href="login.php">Login</a></li>
-                 <li><a href="register.php">Register</a></li>
-            </ul>
-        </nav>
 
-        <div class="login-container"> <!-- Reusing login-container class -->
-            <h1>Forgot Password</h1>
-            <p style="text-align: center; margin-bottom: 20px; color: #666;">Enter your email address to reset your password.</p>
+// 3. تضمين الهيدر
+require_once __DIR__ . '/includes/header.php';
+?>
+
+        <?php // الهيدر والـ Navbar موجودان الآن في header.php ?>
+        <div class="login-container"> <?php // استخدام نفس الكلاس العام للحاوية ?>
+            <h1>Forgot Your Password?</h1>
+            <p class="form-description"> <?php // إضافة كلاس لسهولة التنسيق إذا لزم الأمر ?>
+                No problem. Enter your email address below and we'll help you reset it using your security question.
+            </p>
 
             <?php
-            if ($error) {
-                echo '<p class="error-message">' . $error . '</p>';
+            if (!empty($error)) {
+                echo '<p class="error-message">' . $error . '</p>'; // رسالة الخطأ قد تحتوي على HTML
             }
-            if ($message) {
-                 echo '<p class="message">' . $message . '</p>';
-            }
+            // $message لم يعد مستخدمًا بنفس الطريقة السابقة، لكن يمكن إبقاؤه لرسائل أخرى
+            // if (!empty($message)) {
+            //     echo '<p class="success-message">' . htmlspecialchars($message) . '</p>'; // إذا كانت $message نصًا عاديًا
+            // }
             ?>
 
-            <form action="forgot_password.php" method="POST" class="forgot-form">
+            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" class="forgot-form">
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your registered email" 
+                           value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required autofocus>
                 </div>
 
-                <button type="submit" class="submit-btn">Find Account</button>
+                <button type="submit" class="btn-primary submit-btn">Find Account</button> <?php // استخدام كلاس عام للزر الأساسي ?>
             </form>
-            <p style="text-align: center; margin-top: 20px;"><a href="login.php">Back to Login</a></p>
+
+            <p style="text-align: center; margin-top: 20px;">
+                Remembered your password? <a href="<?php echo APP_URL; ?>login.php" class="link-secondary">Login here</a>
+            </p>
+            <p style="text-align: center; margin-top: 10px;">
+                Don't have an account? <a href="<?php echo APP_URL; ?>register.php" class="link-secondary">Create one</a>
+            </p>
         </div>
-    </div>
-</body>
-</html>
+
+<?php
+// 4. تضمين الفوتر
+require_once __DIR__ . '/includes/footer.php';
+?>

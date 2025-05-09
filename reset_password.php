@@ -1,243 +1,171 @@
 <?php
-session_start(); // بدء الجلسة
+// File: C:\Users\Zainon\Herd\car_rental\reset_password.php
+
+// 1. إعدادات الصفحة والمتطلبات الأساسية
+$page_title = "Reset Your Password";
+// لا حاجة لـ $page_specific_css إذا كانت كل الستايلات في styles.css
+
+// config.php (يبدأ الجلسة ويحدد الثوابت) يتم تضمينه عبر header.php
+// لكننا نحتاج إلى db_connect.php هنا لمنطق إعادة التعيين
+require_once __DIR__ . '/includes/config.php'; // لضمان APP_URL والجلسة
 require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
 
 $error = '';
 $success = '';
 
 // التحقق مما إذا كانت معلومات إعادة التعيين موجودة في الجلسة
+// هذا يجب أن يحدث قبل أي إخراج HTML (قبل تضمين header.php)
 if (!isset($_SESSION['reset_user_id'], $_SESSION['reset_user_email'], $_SESSION['reset_security_question'])) {
-    // إذا لم تكن المعلومات موجودة، إعادة التوجيه إلى صفحة نسيت كلمة المرور
-    header("Location: forgot_password.php");
+    $_SESSION['forgot_password_error'] = "Session expired or invalid. Please start the password reset process again.";
+    header("Location: " . APP_URL . "forgot_password.php");
     exit();
 }
 
 $user_id = $_SESSION['reset_user_id'];
-$email = $_SESSION['reset_user_email']; // $email قد لا يكون ضروريًا هنا إذا كان $user_id كافيًا
-$security_question = $_SESSION['reset_security_question'];
+$email_from_session = $_SESSION['reset_user_email']; // قد نحتاجه للعرض أو التأكيد
+$security_question_from_session = $_SESSION['reset_security_question'];
 
 
-// معالجة نموذج إعادة تعيين كلمة المرور
+// 2. معالجة نموذج إعادة تعيين كلمة المرور
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $submitted_answer = trim($_POST['security_answer']); // لا تستخدم htmlspecialchars للإجابة التي ستُقارن
-    $new_password = $_POST['new_password']; // لا تستخدم htmlspecialchars لكلمة المرور الجديدة
-    $confirm_new_password = $_POST['confirm_new_password'];
-
-    // التحقق من المدخلات
-    if (empty($submitted_answer) || empty($new_password) || empty($confirm_new_password)) {
-        $error = "Please fill in all fields.";
-    } elseif ($new_password !== $confirm_new_password) {
-        $error = "New passwords do not match.";
-    } elseif (strlen($new_password) < 6) {
-        $error = "New password must be at least 6 characters long.";
+    // التأكد مرة أخرى من وجود متغيرات الجلسة قبل المعالجة (قد تكون انتهت صلاحيتها بين التحميل والإرسال)
+    if (!isset($_SESSION['reset_user_id'], $_SESSION['reset_security_question'])) {
+        $error = "Your session has expired. Please start the password reset process again.";
+        // مسح أي بقايا محتملة
+        unset($_SESSION['reset_user_id'], $_SESSION['reset_user_email'], $_SESSION['reset_security_question'], $_SESSION['reset_completed']);
     } else {
-        try {
-            // 1. جلب إجابة الأمان الفعلية من قاعدة البيانات بناءً على user_id باستخدام PDO
-            $stmt = $pdo->prepare("SELECT security_answer FROM users WHERE id = :user_id");
-            $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-            $stmt->execute();
-            $db_security_info = $stmt->fetch(PDO::FETCH_ASSOC); // جلب الصف كـ مصفوفة ترابطية
+        $submitted_answer = trim($_POST['security_answer']);
+        $new_password = $_POST['new_password'];
+        $confirm_new_password = $_POST['confirm_new_password'];
 
-            if ($db_security_info) {
-                $correct_answer_from_db = $db_security_info['security_answer'];
+        if (empty($submitted_answer) || empty($new_password) || empty($confirm_new_password)) {
+            $error = "Please fill in all fields.";
+        } elseif ($new_password !== $confirm_new_password) {
+            $error = "New passwords do not match.";
+        } elseif (strlen($new_password) < 8) { // تطابق مع متطلبات التسجيل
+            $error = "New password must be at least 8 characters long.";
+        } else {
+            try {
+                $stmt = $pdo->prepare("SELECT security_answer FROM users WHERE id = :user_id");
+                $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+                $stmt->execute();
+                $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                // 2. التحقق من إجابة الأمان
-                // إذا كنت تخزن إجابة الأمان كنص عادي (غير مجزأ):
-                if (strtolower($submitted_answer) === strtolower($correct_answer_from_db)) {
-                // إذا كنت قد جزأت إجابة الأمان عند التسجيل (وهو الأفضل):
-                // if (password_verify($submitted_answer, $correct_answer_from_db)) {
+                if ($user_data) {
+                    $hashed_security_answer_from_db = $user_data['security_answer'];
 
-                    // 3. تجزئة كلمة المرور الجديدة
-                    $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
+                    // *** هام: التحقق من إجابة الأمان المجزأة ***
+                    // تذكر أننا قمنا بـ strtolower(trim()) قبل التجزئة في register.php
+                    if (password_verify(strtolower(trim($submitted_answer)), $hashed_security_answer_from_db)) {
+                        $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
 
-                    // 4. تحديث كلمة المرور في قاعدة البيانات باستخدام PDO
-                    $update_stmt = $pdo->prepare("UPDATE users SET password = :new_password WHERE id = :user_id");
-                    $update_stmt->bindParam(':new_password', $hashed_new_password);
-                    $update_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+                        $update_stmt = $pdo->prepare("UPDATE users SET password = :new_password WHERE id = :user_id");
+                        $update_stmt->bindParam(':new_password', $hashed_new_password);
+                        $update_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
 
-                    if ($update_stmt->execute()) {
-                        $success = "Your password has been successfully reset. You can now <a href='login.php'>login</a>.";
-                        // مسح معلومات إعادة التعيين من الجلسة
-                        unset($_SESSION['reset_user_id']);
-                        unset($_SESSION['reset_user_email']);
-                        unset($_SESSION['reset_security_question']);
-                        $_SESSION['reset_completed'] = true; // لمنع إعادة الإرسال وعرض الرسالة بشكل صحيح
-                        // لا حاجة لإعادة التوجيه هنا إذا كنت تريد عرض رسالة النجاح على نفس الصفحة
+                        if ($update_stmt->execute()) {
+                            $success = "Your password has been successfully reset. You can now <a href='" . APP_URL . "login.php'>login</a>.";
+                            // مسح معلومات إعادة التعيين من الجلسة
+                            unset($_SESSION['reset_user_id']);
+                            unset($_SESSION['reset_user_email']);
+                            unset($_SESSION['reset_security_question']);
+                            $_SESSION['reset_completed_message'] = $success; // لتمرير الرسالة بعد إعادة التوجيه أو التحديث
+                            
+                            // من الأفضل إعادة التوجيه لتجنب إعادة إرسال النموذج عند تحديث الصفحة
+                            // وإنشاء "صفحة نجاح" أو عرض الرسالة على صفحة تسجيل الدخول
+                            // لكن لعرضها على نفس الصفحة مباشرة بعد المسح:
+                            // لا يوجد header() هنا لأننا سنعرض الصفحة مع رسالة النجاح
+                        } else {
+                            $errorInfo = $update_stmt->errorInfo();
+                            error_log("Reset Password Update Error: " . $errorInfo[2]);
+                            $error = "Error updating password. Please try again.";
+                        }
                     } else {
-                        $errorInfo = $update_stmt->errorInfo();
-                        $error = "Error updating password. Please try again. Error: " . $errorInfo[2];
+                        $error = "Incorrect security answer. Please try again.";
                     }
                 } else {
-                    $error = "Incorrect security answer.";
+                    $error = "Could not retrieve user information. Please start the forgot password process again.";
+                    unset($_SESSION['reset_user_id'], $_SESSION['reset_user_email'], $_SESSION['reset_security_question']);
                 }
-            } else {
-                // هذا لا ينبغي أن يحدث إذا كانت الجلسة صحيحة
-                $error = "Could not retrieve user information. Please try the forgot password process again.";
-                // ربما مسح الجلسة وإعادة التوجيه
-                unset($_SESSION['reset_user_id']);
-                unset($_SESSION['reset_user_email']);
-                unset($_SESSION['reset_security_question']);
-                header("Location: forgot_password.php");
-                exit();
+            } catch (PDOException $e) {
+                error_log("Reset Password PDOException: " . $e->getMessage());
+                $error = "An error occurred. Please try again later. (Code: DB_RESET_FAIL)";
             }
-        } catch (PDOException $e) {
-            error_log("Reset Password PDOException: " . $e->getMessage());
-            $error = "An error occurred. Please try again later.";
-            // die("Database error: " . $e->getMessage()); // للتصحيح فقط
         }
     }
-    // لا تقم بإغلاق الاتصال $pdo هنا إذا كنت ستستخدمه لاحقًا في الصفحة.
-    // إذا كانت هذه آخر عملية لقاعدة البيانات في هذا الطلب، يمكنك وضع:
-    // $pdo = null;
 }
 
-// تحقق مما إذا اكتملت إعادة التعيين بنجاح (تم تعيينه في كتلة POST)
-if (isset($_SESSION['reset_completed']) && $_SESSION['reset_completed'] === true) {
-    $success = "Your password has been successfully reset. You can now <a href='login.php'>login</a>.";
-    // مسح العلامة والمتغيرات الأخرى ذات الصلة إذا لم يتم مسحها بالفعل
-    unset($_SESSION['reset_completed']);
-    unset($_SESSION['reset_user_id']); // تأكد من مسحها
-    unset($_SESSION['reset_user_email']);
-    unset($_SESSION['reset_security_question']);
-} elseif (!isset($_SESSION['reset_user_id']) && $_SERVER["REQUEST_METHOD"] !== "POST" && empty($success)) {
-    // إذا لم تكن هناك جلسة نشطة ولم يكن هذا طلب POST (ولم تكن هناك رسالة نجاح بالفعل)
-    // فهذا يعني أن المستخدم وصل إلى الصفحة مباشرة بدون المرور بالخطوات السابقة
-    header("Location: forgot_password.php");
+
+// 3. التحقق النهائي لعرض الرسائل أو النموذج (خارج كتلة POST)
+// إذا تم تمرير رسالة نجاح عبر الجلسة (بعد إعادة توجيه مثلاً، أو إذا تم ضبطها في كتلة POST ولم يتم إعادة التوجيه)
+if (isset($_SESSION['reset_completed_message']) && !empty($_SESSION['reset_completed_message'])) {
+    $success = $_SESSION['reset_completed_message'];
+    unset($_SESSION['reset_completed_message']); // امسحها بعد العرض
+    // تأكد من مسح متغيرات الجلسة الأخرى إذا لم يتم مسحها بالفعل
+    unset($_SESSION['reset_user_id'], $_SESSION['reset_user_email'], $_SESSION['reset_security_question']);
+} elseif (empty($success) && empty($error) && !isset($_SESSION['reset_user_id'])) {
+    // إذا لم يكن هناك نجاح، ولا خطأ، ولا جلسة نشطة لإعادة التعيين
+    // (وصل المستخدم إلى الصفحة بطريقة غير صحيحة ولم تتم معالجة أي شيء بعد)
+    $_SESSION['forgot_password_error'] = "Invalid access to password reset page. Please start again.";
+    header("Location: " . APP_URL . "forgot_password.php");
     exit();
 }
 
 
+// 4. تضمين الهيدر
+require_once __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password</title>
-     <link rel="stylesheet" href="assets/css/styles.css">
-    <style>
-         /* Reuse some login styles */
-        .login-container {
-            max-width: 450px; /* Might need wider for questions/answers */
-            margin: 50px auto; /* Add some margin top/bottom */
-        }
-        .reset-form input[type="text"],
-        .reset-form input[type="password"] {
-             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-         .form-group {
-             margin-bottom: 20px;
-         }
-         .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #555;
-         }
-         .submit-btn { /* Same as login-btn */
-            width: 100%;
-            padding: 12px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 10px; /* Add margin above button */
-            margin-bottom: 20px;
-        }
-         .submit-btn:hover {
-             background: #555;
-        }
-        .message {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-         .error-message {
-            color: red;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        .success-message {
-            color: green;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-         h1 {
-             text-align: center;
-             margin-bottom: 20px;
-         }
-         .security-question-text {
-             font-weight: bold;
-             margin-bottom: 15px;
-             text-align: center;
-             font-size: 16px;
-             color: #333;
-         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <nav class="navbar">
-             <div class="logo">
-                <img src="assets/images/logo.png" alt="Your Logo">
-            </div>
-            <ul>
-                <li><a href="#">Cars</a></li>
-                <li><a href="#">Discover</a></li>
-                <li><a href="#">Gallery</a></li>
-                <li><a href="#">Templates</a></li>
-                <li><a href="#">Updates</a></li>
-                 <li><a href="login.php">Login</a></li>
-                 <li><a href="register.php">Register</a></li>
-            </ul>
-        </nav>
 
-        <div class="login-container"> <!-- Reusing login-container class -->
-            <h1>Reset Password</h1>
+        <?php // الهيدر والـ Navbar موجودان الآن في header.php ?>
+        <div class="login-container"> <?php // استخدام نفس الكلاس العام للحاوية ?>
+            <h1>Reset Your Password</h1>
 
             <?php
-            if ($error) {
-                echo '<p class="error-message">' . $error . '</p>';
+            if (!empty($error)) {
+                echo '<p class="error-message">' . htmlspecialchars($error) . '</p>';
             }
-            if ($success) {
-                echo '<p class="success-message">' . $success . '</p>';
+            // عرض رسالة النجاح. إذا كانت موجودة، لن يتم عرض النموذج.
+            if (!empty($success)) {
+                echo '<p class="success-message">' . $success . '</p>'; // رسالة النجاح تحتوي بالفعل على HTML (الرابط)
             }
-            // Only show the form if reset hasn't been completed successfully
-            if (!$success) {
             ?>
 
-            <p class="security-question-text">Your security question:</p>
-            <p style="text-align: center; margin-bottom: 20px; font-style: italic;"><?php echo htmlspecialchars($security_question); ?></p>
-
-            <form action="reset_password.php" method="POST" class="reset-form">
-                <div class="form-group">
-                    <label for="security_answer">Your Answer</label>
-                    <input type="text" id="security_answer" name="security_answer" placeholder="Enter your answer" required>
+            <?php
+            // عرض النموذج فقط إذا لم يكن هناك رسالة نجاح وإذا كانت متغيرات الجلسة لا تزال موجودة
+            // (مما يعني أن المستخدم في منتصف عملية إعادة التعيين ولم يكملها بنجاح بعد)
+            if (empty($success) && isset($_SESSION['reset_user_id'], $security_question_from_session)):
+            ?>
+                <div class="security-question-display"> <?php // كلاس جديد لتمييز عرض السؤال ?>
+                    <p>Your security question for <strong><?php echo htmlspecialchars($email_from_session); ?></strong>:</p>
+                    <p class="question-text"><?php echo htmlspecialchars($security_question_from_session); ?></p>
                 </div>
 
-                 <div class="form-group">
-                    <label for="new_password">New Password</label>
-                    <input type="password" id="new_password" name="new_password" placeholder="Enter new password" required>
-                </div>
+                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" class="reset-form">
+                    <div class="form-group">
+                        <label for="security_answer">Your Answer</label>
+                        <input type="text" id="security_answer" name="security_answer" placeholder="Enter your answer (case-insensitive)" required autofocus>
+                    </div>
 
-                 <div class="form-group">
-                    <label for="confirm_new_password">Confirm New Password</label>
-                    <input type="password" id="confirm_new_password" name="confirm_new_password" placeholder="Confirm new password" required>
-                </div>
+                    <div class="form-group">
+                        <label for="new_password">New Password</label>
+                        <input type="password" id="new_password" name="new_password" placeholder="Enter new password (min 8 chars)" required>
+                    </div>
 
-                <button type="submit" class="submit-btn">Reset Password</button>
-            </form>
+                    <div class="form-group">
+                        <label for="confirm_new_password">Confirm New Password</label>
+                        <input type="password" id="confirm_new_password" name="confirm_new_password" placeholder="Confirm new password" required>
+                    </div>
 
-             <?php } // End of if(!$success) ?>
+                    <button type="submit" class="btn-primary submit-btn">Reset Password</button> <?php // استخدام كلاس عام للزر الأساسي submit-btn ?>
+                </form>
+            <?php endif; // نهاية if لـ empty($success) و isset($_SESSION['reset_user_id']) ?>
 
-            <p style="text-align: center; margin-top: 20px;"><a href="login.php">Back to Login</a></p>
+            <p style="text-align: center; margin-top: 20px;">
+                <a href="<?php echo APP_URL; ?>login.php" class="link-secondary">Back to Login</a>
+            </p>
         </div>
-    </div>
-</body>
-</html>
+
+<?php
+// 5. تضمين الفوتر
+require_once __DIR__ . '/includes/footer.php';
+?>
