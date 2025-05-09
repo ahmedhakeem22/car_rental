@@ -1,6 +1,6 @@
 <?php
 session_start(); // بدء الجلسة
-require_once __DIR__ . '/../includes/db_connect.php'; // تضمين ملف الاتصال بقاعدة البيانات
+require 'includes/db_connect.php'; // تضمين ملف الاتصال بقاعدة البيانات
 
 $error = '';
 $success = '';

@@ -1,14 +1,18 @@
 <?php
-require_once __DIR__ . '/config.php'; // Corrected line
+// db_connect.php
+$servername = "localhost";
+$username = "root"; 
+$password = "root"; 
+$dbname = "cars";    
 
-try {
-    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    // It's often better to log errors than to die() in production,
-    // but for development, die() is okay to see the error immediately.
-    error_log("Database Connection Error: " . $e->getMessage()); // Log the error
-    die("ERROR: Could not connect to the database. Please check the logs or contact support.");
+// إنشاء الاتصال
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// التحقق من الاتصال
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
+
+// تعيين ترميز الحروف لضمان دعم اللغة العربية
+$conn->set_charset("utf8mb4");
 ?>
