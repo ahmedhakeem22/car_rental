@@ -1,0 +1,20 @@
+CREATE TABLE `users` (
+  `id` int NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `security_question` varchar(255) DEFAULT NULL,  // جديد
+  `security_answer` varchar(255) DEFAULT NULL    // جديد
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+تمت إضافة عمودين جديدين إلى جدول users:
+
+security_question: لتخزين سؤال الأمان الخاص بالمستخدم.
+
+security_answer: لتخزين إجابة المستخدم على سؤال الأمان.
+
+تُستخدم هذه الحقول كوسيلة إضافية للتحقق من هوية المستخدم عند طلب إعادة تعيين (Reset) كلمة المرور.
+
