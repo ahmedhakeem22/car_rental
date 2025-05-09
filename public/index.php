@@ -1,6 +1,6 @@
 <?php
 $page_title = "Find Your Perfect Ride";
-require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/db_connect.php';
 require_once __DIR__ . '/../includes/functions.php';
 include __DIR__ . '/partials/header.php';
 
