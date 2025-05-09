@@ -1,20 +1,11 @@
 <?php
 // File: C:\Users\Zainon\Herd\car_rental\reset_password.php
 
-// 1. إعدادات الصفحة والمتطلبات الأساسية
 $page_title = "Reset Your Password";
-// لا حاجة لـ $page_specific_css إذا كانت كل الستايلات في styles.css
-
-// config.php (يبدأ الجلسة ويحدد الثوابت) يتم تضمينه عبر header.php
-// لكننا نحتاج إلى db_connect.php هنا لمنطق إعادة التعيين
-require_once __DIR__ . '/includes/config.php'; // لضمان APP_URL والجلسة
-require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
 
 $error = '';
 $success = '';
 
-// التحقق مما إذا كانت معلومات إعادة التعيين موجودة في الجلسة
-// هذا يجب أن يحدث قبل أي إخراج HTML (قبل تضمين header.php)
 if (!isset($_SESSION['reset_user_id'], $_SESSION['reset_user_email'], $_SESSION['reset_security_question'])) {
     $_SESSION['forgot_password_error'] = "Session expired or invalid. Please start the password reset process again.";
     header("Location: " . APP_URL . "forgot_password.php");
@@ -131,8 +122,6 @@ require_once __DIR__ . '/includes/header.php';
             ?>
 
             <?php
-            // عرض النموذج فقط إذا لم يكن هناك رسالة نجاح وإذا كانت متغيرات الجلسة لا تزال موجودة
-            // (مما يعني أن المستخدم في منتصف عملية إعادة التعيين ولم يكملها بنجاح بعد)
             if (empty($success) && isset($_SESSION['reset_user_id'], $security_question_from_session)):
             ?>
                 <div class="security-question-display"> <?php // كلاس جديد لتمييز عرض السؤال ?>

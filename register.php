@@ -4,12 +4,6 @@
 // 1. إعدادات الصفحة والمتطلبات الأساسية
 $page_title = "Register New Account";
 
-// config.php (يبدأ الجلسة ويحدد الثوابت) يتم تضمينه عبر header.php
-// لكننا نحتاج إلى db_connect.php هنا لمنطق التسجيل
-require_once __DIR__ . '/includes/config.php'; // لضمان APP_URL والجلسة
-require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
-
-// إذا كان المستخدم مسجلاً دخوله بالفعل، وجهه إلى لوحة التحكم
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php");
     exit();

@@ -1,13 +1,10 @@
 <?php
-session_start(); // بدء الجلسة
+session_start(); 
 
-// تدمير معلومات جلسة المسؤول فقط
 unset($_SESSION['admin_id']);
 unset($_SESSION['admin_username']);
 unset($_SESSION['admin_role']);
 
-// إذا لم يعد هناك أي معرفات في الجلسة (أي لا يوجد مستخدم عادي مسجل دخوله أيضاً)
-// يمكنك تدمير الجلسة بالكامل
 if (empty($_SESSION)) {
      $_SESSION = array();
      if (ini_get("session.use_cookies")) {
@@ -21,7 +18,6 @@ if (empty($_SESSION)) {
 }
 
 
-// إعادة التوجيه إلى صفحة تسجيل الدخول للمسؤول
 header("Location: admin_login.php");
 exit();
 ?>

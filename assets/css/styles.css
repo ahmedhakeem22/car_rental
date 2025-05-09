@@ -1,33 +1,29 @@
-/* C:\Users\Zainon\Herd\car_rental\assets\css\styles.css */
-
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Roboto', sans-serif; /* تأكد من تضمين هذا الخط إذا لم يكن خط نظام */
+    font-family: 'Roboto', sans-serif;
 }
 
 body {
     background-color: #f5f5f5;
     color: #333;
-    /* padding: 20px; */ /* تم التعليق عليه، يمكن أن يتعارض مع container إذا كان لكليهما padding */
-    line-height: 1.6; /* تحسين قابلية القراءة */
+    line-height: 1.6;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px; /* إضافة padding أفقي للحاويات الرئيسية لمنع الالتصاق بالحواف */
+    padding: 0 20px;
 }
 
-/* --- Navbar Styles --- */
 .navbar {
     display: flex;
-    justify-content: space-between; /* توزيع أفضل للعناصر */
+    justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px; /* تقليل المسافة السفلية قليلاً */
+    margin-bottom: 40px;
     background: linear-gradient(135deg, #1B2559, #0A122B);
-    padding: 15px 30px; /* زيادة padding الأفقي قليلاً */
+    padding: 15px 30px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
@@ -35,13 +31,13 @@ body {
 .logo img {
     height: 40px;
     width: auto;
-    display: block; /* لإزالة أي مسافات إضافية تحت الصورة */
+    display: block;
 }
 
 .navbar ul {
     display: flex;
     list-style: none;
-    gap: 25px; /* تقليل المسافة بين عناصر القائمة قليلاً */
+    gap: 25px;
     padding: 0;
     margin: 0;
 }
@@ -52,42 +48,41 @@ body {
     font-weight: 500;
     font-size: 16px;
     padding: 8px 12px;
-    border-radius: 6px; /* تعديل بسيط */
+    border-radius: 6px;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.navbar a:hover, .navbar a.active { /* إضافة كلاس .active للصفحة الحالية */
-    background-color: rgba(255, 255, 255, 0.15); /* زيادة الوضوح عند المرور */
-    color: #03a9f4; /* تغيير طفيف للون عند المرور */
+.navbar a:hover, .navbar a.active {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #03a9f4;
 }
 
-/* --- Login/Register Container Styles --- */
-.login-container { /* هذا الكلاس سيُستخدم لصفحتي تسجيل الدخول والتسجيل */
-    max-width: 450px; /* زيادة العرض قليلاً لاستيعاب حقول التسجيل بشكل أفضل */
-    margin: 40px auto; /* مسافة من الأعلى والأسفل */
+.login-container {
+    max-width: 450px;
+    margin: 40px auto;
     background: white;
-    padding: 30px 40px; /* تعديل الـ padding */
-    border-radius: 12px; /* تطابق مع الـ navbar */
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* ظل أوضح قليلاً */
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .login-container h1 {
-    font-size: 28px; /* تكبير الخط قليلاً */
-    font-weight: 600; /* جعل الخط أثقل */
-    margin-bottom: 15px; /* تقليل المسافة */
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 15px;
     text-align: center;
-    color: #1B2559; /* استخدام لون من الـ navbar */
+    color: #1B2559;
 }
 
-.register-text { /* يستخدم في كلا الصفحتين */
+.register-text {
     text-align: center;
     margin-bottom: 25px;
-    color: #555; /* تغميق اللون قليلاً */
+    color: #555;
     font-size: 15px;
 }
 
 .register-text a {
-    color: #007bff; /* لون أزرق قياسي للروابط */
+    color: #007bff;
     text-decoration: none;
     font-weight: 500;
 }
@@ -95,19 +90,18 @@ body {
     text-decoration: underline;
 }
 
-/* --- Google Button & OR Divider (إذا كنت ستستخدمهما) --- */
 .google-btn {
     width: 100%;
     padding: 12px;
     background: white;
-    border: 1px solid #ccc; /* تغيير لون الحدود */
-    border-radius: 6px; /* تطابق مع الأزرار الأخرى */
+    border: 1px solid #ccc;
+    border-radius: 6px;
     font-size: 16px;
     font-weight: 500;
-    color: #444; /* تغيير لون النص */
+    color: #444;
     cursor: pointer;
-    margin-bottom: 20px; /* تقليل المسافة */
-    display: flex; /* لمحاذاة الأيقونة والنص إذا أضفت أيقونة لاحقًا */
+    margin-bottom: 20px;
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
@@ -119,9 +113,9 @@ body {
 
 .or-divider {
     position: relative;
-    margin: 20px 0; /* تقليل المسافة */
+    margin: 20px 0;
     text-align: center;
-    color: #aaa; /* تغميق اللون قليلاً */
+    color: #aaa;
 }
 
 .or-divider::before,
@@ -129,7 +123,7 @@ body {
     content: "";
     position: absolute;
     top: 50%;
-    width: calc(50% - 20px); /* تعديل العرض لمراعاة النص "or" */
+    width: calc(50% - 20px);
     height: 1px;
     background: #ddd;
 }
@@ -137,14 +131,12 @@ body {
 .or-divider::before { left: 0; }
 .or-divider::after { right: 0; }
 .or-divider span {
-    background-color: #fff; /* للتأكد من أن النص "or" فوق الخط */
+    background-color: #fff;
     padding: 0 10px;
     position: relative;
     z-index: 1;
 }
 
-
-/* --- Form Element Styles (عام لجميع النماذج) --- */
 .form-group {
     margin-bottom: 20px;
 }
@@ -153,35 +145,34 @@ body {
     display: block;
     margin-bottom: 8px;
     font-size: 14px;
-    color: #333; /* تغميق لون العنوان */
-    font-weight: 500; /* جعل الخط أثقل قليلاً */
+    color: #333;
+    font-weight: 500;
 }
 
 .form-group input[type="text"],
 .form-group input[type="email"],
 .form-group input[type="password"],
 .form-group input[type="tel"],
-.form-group select { /* إضافة select هنا */
+.form-group select {
     width: 100%;
-    padding: 12px 15px; /* زيادة الـ padding قليلاً */
-    border: 1px solid #ccc; /* تغيير لون الحدود */
-    border-radius: 6px; /* تطابق مع الأزرار */
-    font-size: 15px; /* توحيد حجم الخط */
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
     color: #333;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.form-group input:focus, .form-group select:focus { /* ستايل عند التركيز */
+.form-group input:focus, .form-group select:focus {
     border-color: #007bff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     outline: none;
 }
-.form-group input::placeholder { /* تعديل لون placeholder */
+.form-group input::placeholder {
     color: #999;
 }
 
-/* --- Security Question Group (خاص بصفحة التسجيل) --- */
-.security-group { /* اسم الكلاس هذا مستخدم في register.php */
+.security-group {
     margin-bottom: 20px;
 }
 .security-group label {
@@ -191,8 +182,8 @@ body {
     color: #333;
     font-weight: 500;
 }
-.security-group input, /* input خاص بـ security_answer */
-.security-group select { /* select خاص بـ security_question */
+.security-group input,
+.security-group select {
     width: 100%;
     padding: 12px 15px;
     border: 1px solid #ccc;
@@ -200,31 +191,29 @@ body {
     font-size: 15px;
     color: #333;
 }
-.security-group small { /* لرسالة المساعدة تحت حقل إجابة الأمان */
+.security-group small {
     display: block;
     margin-top: 5px;
     font-size: 12px;
     color: #777;
 }
 
-
-/* --- Checkbox Group Styles --- */
 .checkbox-group {
     display: flex;
     align-items: center;
     margin: 20px 0;
-    gap: 10px; /* زيادة المسافة قليلاً */
+    gap: 10px;
 }
 
 .checkbox-group input[type="checkbox"] {
     width: auto;
-    margin-right: 5px; /* تعديل المسافة */
-    accent-color: #007bff; /* تغيير لون علامة الصح (يدعم في المتصفحات الحديثة) */
+    margin-right: 5px;
+    accent-color: #007bff;
 }
 .checkbox-group label {
     font-size: 14px;
     color: #555;
-    margin-bottom: 0; /* إزالة المسافة السفلية من label داخل checkbox-group */
+    margin-bottom: 0;
 }
 .checkbox-group label a {
     color: #007bff;
@@ -235,9 +224,8 @@ body {
 }
 
 
-/* --- Button Styles --- */
-.login-btn, /* لزر تسجيل الدخول */
-.register-btn { /* لزر إنشاء حساب (من register.php) */
+.login-btn, 
+.register-btn { 
     width: 100%;
     padding: 12px 15px;
     border: none;
@@ -246,41 +234,39 @@ body {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.1s ease;
-    text-align: center; /* ضمان محاذاة النص في الوسط */
+    text-align: center; 
 }
 .login-btn:active, .register-btn:active {
-    transform: translateY(1px); /* تأثير ضغط بسيط */
+    transform: translateY(1px); 
 }
 
-/* تخصيص ألوان الأزرار */
 .login-btn {
-    background-color: #343a40; /* لون أغمق لتسجيل الدخول */
+    background-color: #343a40; 
     color: white;
-    margin-bottom: 15px; /* مسافة بعد زر تسجيل الدخول */
+    margin-bottom: 15px; 
 }
 .login-btn:hover {
     background-color: #23272b;
 }
 
 .register-btn {
-    background-color: #28a745; /* أخضر لإنشاء حساب */
+    background-color: #28a745;
     color: white;
-    margin-top: 10px; /* إضافة مسافة قبل زر التسجيل */
+    margin-top: 10px; 
 }
 .register-btn:hover {
     background-color: #218838;
 }
 
 
-/* --- Forgot Password Link --- */
 .forgot-password {
     text-align: center;
-    margin-top: 15px; /* إضافة مسافة من الأعلى */
+    margin-top: 15px; 
     margin-bottom: 10px;
     font-size: 14px;
 }
 
-.forgot-password a, .reset-link { /* دمج الستايل */
+.forgot-password a, .reset-link { 
     color: #007bff;
     text-decoration: none;
     font-weight: 500;
@@ -290,16 +276,15 @@ body {
 }
 
 
-/* --- Utility Classes (مثل رسائل الخطأ والنجاح) --- */
 .error-message {
     color: #721c24;
     background-color: #f8d7da;
     border: 1px solid #f5c6cb;
-    padding: 12px 15px; /* زيادة الـ padding */
+    padding: 12px 15px; 
     text-align: center;
-    margin-bottom: 20px; /* زيادة المسافة */
-    border-radius: 6px; /* تطابق مع العناصر الأخرى */
-    font-size: 15px; /* توحيد حجم الخط */
+    margin-bottom: 20px; 
+    border-radius: 6px; 
+    font-size: 15px; 
 }
 
 .success-message {
@@ -312,30 +297,28 @@ body {
     border-radius: 6px;
     font-size: 15px;
 }
-.success-message a { /* ستايل الرابط داخل رسالة النجاح */
-    color: #0f5132; /* لون أغمق قليلاً ليبرز */
+.success-message a { 
+    color: #0f5132; 
     font-weight: bold;
     text-decoration: underline;
 }
 
-/* --- Footer Styles (مثال بسيط) --- */
 footer {
     text-align: center;
     padding: 30px 20px;
-    margin-top: 50px; /* مسافة من المحتوى الرئيسي */
+    margin-top: 50px; 
     border-top: 1px solid #e0e0e0;
     font-size: 14px;
     color: #777;
 }
 
 
-/* ستايل لعرض سؤال الأمان في صفحة reset_password.php */
 .security-question-display {
-    background-color: #e9ecef; /* خلفية رمادية فاتحة لتمييز القسم */
+    background-color: #e9ecef; 
     padding: 15px;
     border-radius: 6px;
     margin-bottom: 25px;
-    text-align: center; /* محاذاة النص في الوسط */
+    text-align: center; 
 }
 
 .security-question-display p {
@@ -348,10 +331,10 @@ footer {
     font-weight: bold;
     font-style: italic;
     font-size: 16px;
-    color: #1B2559; /* لون من الـ navbar */
+    color: #1B2559; 
 }
 
-.submit-btn { /* هذا هو الكلاس الذي استخدمته في HTML أعلاه */
+.submit-btn { 
     width: 100%;
     padding: 12px 15px;
     border: none;
@@ -361,7 +344,7 @@ footer {
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.1s ease;
     text-align: center;
-    background-color: #007bff; /* لون أزرق افتراضي للزر الأساسي */
+    background-color: #007bff; 
     color: white;
     margin-top: 10px;
 }
@@ -372,9 +355,8 @@ footer {
     transform: translateY(1px);
 }
 
-/* ستايل للرابط الثانوي (مثل "Back to Login") */
 .link-secondary {
-    color: #6c757d; /* لون رمادي للرابط الثانوي */
+    color: #6c757d; 
     text-decoration: none;
 }
 .link-secondary:hover {
@@ -384,8 +366,8 @@ footer {
 
 .form-description {
     text-align: center;
-    margin-bottom: 25px; /* زيادة المسافة قبل النموذج */
-    color: #555; /* نفس لون .register-text */
+    margin-bottom: 25px; 
+    color: #555;
     font-size: 15px;
-    line-height: 1.5; /* تحسين قابلية القراءة إذا كان النص أطول */
+    line-height: 1.5;
 }

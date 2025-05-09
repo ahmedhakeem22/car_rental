@@ -1,16 +1,5 @@
 <?php
-// File: C:\Users\Zainon\Herd\car_rental\forgot_password.php
-
-// 1. إعدادات الصفحة والمتطلبات الأساسية
 $page_title = "Forgot Your Password";
-// لا حاجة لـ $page_specific_css إذا كانت كل الستايلات في styles.css
-
-// config.php (يبدأ الجلسة ويحدد الثوابت) يتم تضمينه عبر header.php
-// لكننا نحتاج إلى db_connect.php هنا لمنطق البحث عن المستخدم
-require_once __DIR__ . '/includes/config.php'; // لضمان APP_URL والجلسة
-require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
-
-// التحقق مما إذا كان المستخدم مسجلاً دخوله بالفعل، إذا كان كذلك، وجهه إلى لوحة التحكم
 if (isset($_SESSION['user_id'])) {
     header("Location: " . APP_URL . "dashboard.php");
     exit();
