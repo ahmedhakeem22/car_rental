@@ -2,6 +2,7 @@
 
 // Page specific configurations
 $page_title = "Login";
+require_once __DIR__ . '/includes/db_connect.php'; // Adjust path if needed
 
 // التحقق مما إذا كان المستخدم مسجل الدخول بالفعل
 // This check must happen BEFORE any HTML output (i.e., before including header.php)
