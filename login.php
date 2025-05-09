@@ -1,6 +1,6 @@
 <?php
 session_start(); // بدء الجلسة
-require 'includes/db_connect.php'; // تضمين ملف الاتصال بقاعدة البيانات
+require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
 
 // التحقق مما إذا كان المستخدم مسجل الدخول بالفعل
 if (isset($_SESSION['user_id'])) {
@@ -12,47 +12,57 @@ $error = '';
 
 // معالجة نموذج تسجيل الدخول عند الإرسال
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = htmlspecialchars($_POST['email']);
-    $password = htmlspecialchars($_POST['password']);
+    // لا تستخدم htmlspecialchars هنا، خاصة لكلمة المرور.
+    // htmlspecialchars للإيميل يمكن أن يكون مقبولاً إذا كنت ستعرضه مرة أخرى في النموذج عند الخطأ
+    // ولكن لا تحتاجه للمقارنة مع قاعدة البيانات.
+    $email = trim($_POST['email']);
+    $password = $_POST['password']; // لا تستخدم htmlspecialchars لكلمة المرور
 
     // التحقق من المدخلات
     if (empty($email) || empty($password)) {
         $error = "Please enter both email and password.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    
-         $error = "Invalid email format.";
+        $error = "Invalid email format.";
     } else {
-        // البحث عن المستخدم في قاعدة البيانات
-        $stmt = $conn->prepare("SELECT id, name, password FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
+        try {
+            // البحث عن المستخدم في قاعدة البيانات باستخدام PDO
+            $stmt = $pdo->prepare("SELECT id, name, password FROM users WHERE email = :email");
+            // يمكنك استخدام bindParam أو تمرير مصفوفة إلى execute
+            // $stmt->bindParam(':email', $email);
+            // $stmt->execute();
+            // أو الطريقة المختصرة:
+            $stmt->execute(['email' => $email]);
 
-        if ($stmt->num_rows == 1) {
-            $stmt->bind_result($user_id, $name, $hashed_password);
-            $stmt->fetch();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC); // جلب المستخدم كـ مصفوفة ترابطية
 
-            // التحقق من كلمة المرور
-            if (password_verify($password, $hashed_password)) {
-                // تسجيل الدخول بنجاح
-                $_SESSION['user_id'] = $user_id;
-                $_SESSION['user_name'] = $name;
-                // يمكنك إضافة المزيد من معلومات المستخدم إلى الجلسة إذا لزم الأمر
+            if ($user) {
+                // التحقق من كلمة المرور
+                // $password هي كلمة المرور التي أدخلها المستخدم
+                // $user['password'] هي كلمة المرور المجزأة من قاعدة البيانات
+                if (password_verify($password, $user['password'])) {
+                    // تسجيل الدخول بنجاح
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['name'];
+                    // يمكنك إضافة المزيد من معلومات المستخدم إلى الجلسة إذا لزم الأمر
 
-                // إعادة التوجيه إلى صفحة لوحة القيادة أو أي صفحة بعد تسجيل الدخول
-                header("Location: dashboard.php");
-                exit();
+                    // إعادة التوجيه إلى صفحة لوحة القيادة أو أي صفحة بعد تسجيل الدخول
+                    header("Location: dashboard.php");
+                    exit();
+                } else {
+                    // كلمة المرور غير صحيحة
+                    $error = "Invalid email or password."; // رسالة عامة لأمان أفضل
+                }
             } else {
-                // كلمة المرور غير صحيحة
+                // المستخدم غير موجود
                 $error = "Invalid email or password."; // رسالة عامة لأمان أفضل
             }
-        } else {
-            // المستخدم غير موجود
-            $error = "Invalid email or password."; // رسالة عامة لأمان أفضل
+        } catch (PDOException $e) {
+            error_log("Login PDOException: " . $e->getMessage()); // سجل الخطأ الفعلي للمطور
+            $error = "An error occurred during login. Please try again later.";
+            // die("Database query failed: " . $e->getMessage()); // للتصحيح فقط، لا تستخدم die في الإنتاج
         }
-        $stmt->close();
     }
-     $conn->close(); // Close connection after handling the request
+  
 }
 ?>
 <!DOCTYPE html>

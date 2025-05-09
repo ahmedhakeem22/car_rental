@@ -1,19 +1,19 @@
 <?php
 session_start();
-require 'includes/db_connect.php'; // تضمين ملف الاتصال بقاعدة البيانات
+require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
 
 $error = '';
 $success = '';
 
 // معالجة نموذج التسجيل عند الإرسال
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = htmlspecialchars($_POST['name']);
-    $email = htmlspecialchars($_POST['email']);
-    $password = htmlspecialchars($_POST['password']);
-    $confirm_password = htmlspecialchars($_POST['confirm_password']);
-    $security_question = htmlspecialchars($_POST['security_question']); // assuming added to DB schema
-    $security_answer = htmlspecialchars($_POST['security_answer']);   // assuming added to DB schema
-    $terms = isset($_POST['terms']); // Check if checkbox is checked
+    $name = htmlspecialchars(trim($_POST['name']));
+    $email = htmlspecialchars(trim($_POST['email']));
+    $password = $_POST['password']; // لا تقم بـ htmlspecialchars لكلمة المرور هنا، ستُجزأ لاحقًا
+    $confirm_password = $_POST['confirm_password'];
+    $security_question = htmlspecialchars(trim($_POST['security_question']));
+    $security_answer = htmlspecialchars(trim($_POST['security_answer'])); // يجب تجزئة هذا أيضًا في تطبيق حقيقي
+    $terms = isset($_POST['terms']);
 
     // التحقق من المدخلات
     if (empty($name) || empty($email) || empty($password) || empty($confirm_password) || empty($security_question) || empty($security_answer)) {
@@ -22,44 +22,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Invalid email format.";
     } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match.";
-    } elseif (strlen($password) < 6) { // مثال بسيط لطول كلمة المرور
+    } elseif (strlen($password) < 6) {
         $error = "Password must be at least 6 characters long.";
     } elseif (!$terms) {
          $error = "You must agree to the Terms and Conditions.";
     } else {
-        // التحقق مما إذا كان البريد الإلكتروني موجودًا بالفعل
-        $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
+        try {
+            // 1. التحقق مما إذا كان البريد الإلكتروني موجودًا بالفعل باستخدام PDO
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email");
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
 
-        if ($stmt->num_rows > 0) {
-            $error = "Email address is already registered.";
-        } else {
-            // تجزئة كلمة المرور قبل الحفظ
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            // ملاحظة: يفضل تجزئة إجابة الأمان أيضاً في تطبيق حقيقي
-            // لكن لأغراض التوضيح هنا، سنحفظها كنص (بعد htmlspecialchars)
-
-            // إدراج المستخدم الجديد في قاعدة البيانات
-            // NOTE: The provided schema needs security_question and security_answer columns
-            $insert_stmt = $conn->prepare("INSERT INTO users (name, email, password, security_question, security_answer) VALUES (?, ?, ?, ?, ?)");
-            $insert_stmt->bind_param("sssss", $name, $email, $hashed_password, $security_question, $security_answer);
-
-            if ($insert_stmt->execute()) {
-                $success = "Registration successful! You can now <a href='login.php'>login</a>.";
-                 // Optional: Clear form fields on success
-                 $name = $email = $password = $confirm_password = $security_question = $security_answer = ''; // Clear variables
+            if ($stmt->fetchColumn()) { // fetchColumn() ترجع قيمة العمود الأول أو false إذا لم يوجد صف
+                $error = "Email address is already registered.";
             } else {
-                $error = "Error registering user: " . $conn->error;
+                // 2. تجزئة كلمة المرور
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                // يفضل تجزئة إجابة الأمان أيضاً:
+                // $hashed_security_answer = password_hash($security_answer, PASSWORD_DEFAULT);
+
+                // 3. إدراج المستخدم الجديد في قاعدة البيانات باستخدام PDO
+                $insert_stmt = $pdo->prepare("INSERT INTO users (name, email, password, security_question, security_answer) VALUES (:name, :email, :password, :security_question, :security_answer)");
+                
+                $insert_stmt->bindParam(':name', $name);
+                $insert_stmt->bindParam(':email', $email);
+                $insert_stmt->bindParam(':password', $hashed_password);
+                $insert_stmt->bindParam(':security_question', $security_question);
+                $insert_stmt->bindParam(':security_answer', $security_answer); // استخدم $hashed_security_answer إذا قمت بتجزئتها
+
+                if ($insert_stmt->execute()) {
+                    $success = "Registration successful! You can now <a href='login.php'>login</a>.";
+                    // Optional: Clear form fields on success
+                    $_POST = array(); // طريقة أسهل لمسح قيم POST بعد النجاح
+                    $name = $email = $password = $confirm_password = $security_question = $security_answer = '';
+                } else {
+                    $errorInfo = $insert_stmt->errorInfo();
+                    $error = "Error registering user. Please try again. Error: " . $errorInfo[2]; // [2] يحتوي على رسالة الخطأ
+                }
             }
-            $insert_stmt->close();
+        } catch (PDOException $e) {
+            error_log("Registration PDOException: " . $e->getMessage()); // سجل الخطأ الفعلي للمطور
+            $error = "An error occurred during registration. Please contact support.";
+            // die("Database Error: " . $e->getMessage()); // للتصحيح فقط
         }
-        $stmt->close();
     }
 }
 
-$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

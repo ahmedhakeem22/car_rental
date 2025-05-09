@@ -2,12 +2,13 @@
 session_start(); // بدء الجلسة
 
 // تضمين ملف الاتصال بقاعدة البيانات
-require '../includes/db_connect.php'; // تضمين ملف الاتصال بقاعدة البيانات
+// المسار '../includes/db_connect.php' يعني أن هذا الملف موجود داخل مجلد (مثل admin)
+// وأن مجلد includes موجود في المستوى الأعلى (بجوار مجلد admin)
+require_once __DIR__ . '/../includes/db_connect.php'; // استخدام __DIR__ أكثر موثوقية للمسارات النسبية
 
 // التحقق مما إذا كان المسؤول مسجل الدخول بالفعل
-// سنستخدم مفتاح جلسة مختلف للمسؤولين ($_SESSION['admin_id']) لتمييزهم عن المستخدمين العاديين
 if (isset($_SESSION['admin_id'])) {
-    header("Location: admin_dashboard.php"); // إعادة التوجيه إلى لوحة تحكم المسؤول
+    header("Location: admin_dashboard.php");
     exit();
 }
 
@@ -15,47 +16,54 @@ $error = '';
 
 // معالجة نموذج تسجيل الدخول للمسؤول عند الإرسال
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = htmlspecialchars($_POST['username']);
-    $password = htmlspecialchars($_POST['password']);
+    // لا تحتاج لـ htmlspecialchars هنا، خاصة لكلمة المرور.
+    $username = trim($_POST['username']); // trim جيد
+    $password = $_POST['password']; // لا تستخدم htmlspecialchars لكلمة المرور
 
     // التحقق من المدخلات
     if (empty($username) || empty($password)) {
         $error = "Please enter both username and password.";
     } else {
-        // البحث عن المسؤول في قاعدة البيانات باستخدام اسم المستخدم
-        $stmt = $conn->prepare("SELECT id, password, role FROM admins WHERE username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $stmt->store_result();
+        try {
+            // البحث عن المسؤول في قاعدة البيانات باستخدام اسم المستخدم (PDO)
+            $stmt = $pdo->prepare("SELECT id, password, role FROM admins WHERE username = :username");
+            // $stmt->bindParam(':username', $username);
+            // $stmt->execute();
+            // أو الطريقة المختصرة:
+            $stmt->execute(['username' => $username]);
 
-        if ($stmt->num_rows == 1) {
-            $stmt->bind_result($admin_id, $hashed_password, $role);
-            $stmt->fetch();
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC); // جلب المسؤول كـ مصفوفة ترابطية
 
-            // التحقق من كلمة المرور المُجزأة (hashed password)
-            if (password_verify($password, $hashed_password)) {
-                // تسجيل الدخول بنجاح كمسؤول
-                $_SESSION['admin_id'] = $admin_id;
-                $_SESSION['admin_username'] = $username;
-                $_SESSION['admin_role'] = $role; // Store the admin's role
-                // يمكنك إضافة المزيد من معلومات المسؤول إلى الجلسة إذا لزم الأمر
+            if ($admin) {
+                // التحقق من كلمة المرور المُجزأة
+                // $password هي المدخلة من المسؤول
+                // $admin['password'] هي المجزأة من قاعدة البيانات
+                if (password_verify($password, $admin['password'])) {
+                    // تسجيل الدخول بنجاح كمسؤول
+                    $_SESSION['admin_id'] = $admin['id'];
+                    $_SESSION['admin_username'] = $username; // أو $admin['username']
+                    $_SESSION['admin_role'] = $admin['role'];
+                    // يمكنك إضافة المزيد من معلومات المسؤول إلى الجلسة إذا لزم الأمر
 
-                // إعادة التوجيه إلى لوحة تحكم المسؤول
-                header("Location: admin_dashboard.php");
-                exit();
+                    // إعادة التوجيه إلى لوحة تحكم المسؤول
+                    header("Location: admin_dashboard.php");
+                    exit();
+                } else {
+                    // كلمة المرور غير صحيحة
+                    $error = "Invalid username or password.";
+                }
             } else {
-                // كلمة المرور غير صحيحة
-                $error = "Invalid username or password."; // رسالة عامة لأمان أفضل
+                // المسؤول غير موجود
+                $error = "Invalid username or password.";
             }
-        } else {
-            // المسؤول غير موجود
-            $error = "Invalid username or password."; // رسالة عامة لأمان أفضل
+        } catch (PDOException $e) {
+            error_log("Admin Login PDOException: " . $e->getMessage());
+            $error = "An error occurred during login. Please try again later.";
+            // die("Database query failed: " . $e->getMessage()); // للتصحيح فقط
         }
-        $stmt->close();
     }
-     $conn->close(); // Close connection after handling the request
+  
 }
-// If GET request or POST failed, the HTML form will be displayed below.
 ?>
 <!DOCTYPE html>
 <html lang="en">

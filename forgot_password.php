@@ -1,13 +1,14 @@
 <?php
 session_start(); // بدء الجلسة
-require 'includes/db_connect.php'; // تضمين ملف الاتصال بقاعدة البيانات
+require_once __DIR__ . '/includes/db_connect.php'; // يوفر المتغير $pdo
 
 $message = '';
 $error = '';
 
 // معالجة نموذج طلب إعادة تعيين كلمة المرور
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = htmlspecialchars($_POST['email']);
+    // لا تحتاج إلى htmlspecialchars هنا، ولكن trim جيد
+    $email = trim($_POST['email']);
 
     // التحقق من المدخلات
     if (empty($email)) {
@@ -15,32 +16,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email format.";
     } else {
-        // البحث عن المستخدم في قاعدة البيانات
-        $stmt = $conn->prepare("SELECT id, security_question FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
+        try {
+            // البحث عن المستخدم في قاعدة البيانات باستخدام PDO
+            $stmt = $pdo->prepare("SELECT id, security_question FROM users WHERE email = :email");
+            // $stmt->bindParam(':email', $email);
+            // $stmt->execute();
+            // أو الطريقة المختصرة:
+            $stmt->execute(['email' => $email]);
 
-        if ($stmt->num_rows == 1) {
-            $stmt->bind_result($user_id, $security_question);
-            $stmt->fetch();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC); // جلب المستخدم كـ مصفوفة ترابطية
 
-            // تخزين معلومات المستخدم وسؤال الأمان في الجلسة للانتقال إلى صفحة إعادة التعيين
-            $_SESSION['reset_user_id'] = $user_id;
-            $_SESSION['reset_user_email'] = $email;
-            $_SESSION['reset_security_question'] = $security_question;
+            if ($user) {
+                // المستخدم موجود، تخزين معلومات المستخدم وسؤال الأمان في الجلسة
+                $_SESSION['reset_user_id'] = $user['id'];
+                $_SESSION['reset_user_email'] = $email; // يمكنك أيضًا استخدام $user['email'] إذا كان اسم العمود مختلفًا
+                $_SESSION['reset_security_question'] = $user['security_question'];
 
-            // إعادة التوجيه إلى صفحة إعادة تعيين كلمة المرور
-            header("Location: reset_password.php");
-            exit();
-
-        } else {
-            // المستخدم غير موجود - رسالة عامة لأمان أفضل
-            $message = "If an account with that email exists, you will be prompted for your security question.";
+                // إعادة التوجيه إلى صفحة إعادة تعيين كلمة المرور
+                header("Location: reset_password.php");
+                exit();
+            } else {
+                // المستخدم غير موجود - رسالة عامة لأمان أفضل
+                // يمكنك اختيار عرض رسالة خطأ مباشرة أو رسالة عامة
+                // $error = "No account found with that email address.";
+                $message = "If an account with that email exists, instructions to reset your password have been sent (or you will be prompted for your security question on the next page).";
+                // عمليًا، إذا كان المستخدم غير موجود، لا يجب أن تنتقل إلى الخطوة التالية.
+                // الرسالة أعلاه هي أكثر غموضًا لأسباب أمنية، لكن في نظام سؤال الأمان، الخطأ المباشر قد يكون مقبولاً.
+                // إذا كنت تريد أن تكون الرسالة دائمًا "If an account...", فضعها خارج الشرط.
+                // في هذا السيناريو، إذا لم يتم العثور على المستخدم، يجب أن تظهر رسالة خطأ بدلًا من الرسالة العامة ثم لا شيء.
+                $error = "No account found with that email address. Please check your input.";
+            }
+        } catch (PDOException $e) {
+            error_log("Forgot Password PDOException: " . $e->getMessage());
+            $error = "An error occurred. Please try again later.";
+            // die("Database query failed: " . $e->getMessage()); // للتصحيح فقط
         }
-        $stmt->close();
     }
-     $conn->close(); // Close connection after handling the request
+  
 }
 // If GET request or POST failed, the HTML form will be displayed below.
 ?>
