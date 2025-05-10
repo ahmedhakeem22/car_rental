@@ -32,7 +32,7 @@ CREATE TABLE `admins` (
   `username` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `role` enum('superadmin','manager','staff') DEFAULT 'staff'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- إرجاع أو استيراد بيانات الجدول `admins`
@@ -62,7 +62,7 @@ CREATE TABLE `cars` (
   `pickup_longitude` decimal(11,8) DEFAULT NULL COMMENT 'Longitude of pickup location',
   `average_rating` decimal(3,2) DEFAULT NULL,
   `total_reviews` int DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- إرجاع أو استيراد بيانات الجدول `cars`
@@ -90,7 +90,7 @@ CREATE TABLE `rentals` (
   `status` enum('booked','completed','cancelled') DEFAULT 'booked',
   `payment_status` enum('pending','paid','refunded') DEFAULT 'pending',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- إرجاع أو استيراد بيانات الجدول `rentals`
@@ -112,7 +112,7 @@ CREATE TABLE `returns` (
   `return_date` date NOT NULL,
   `condition_notes` text,
   `late_fee` decimal(10,2) DEFAULT '0.00'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -151,7 +151,7 @@ CREATE TABLE `review_votes` (
   `user_id` int NOT NULL,
   `vote_type` enum('like','dislike') NOT NULL,
   `voted_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- إرجاع أو استيراد بيانات الجدول `review_votes`
@@ -175,7 +175,7 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `security_question` varchar(255) DEFAULT NULL,
   `security_answer` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- إرجاع أو استيراد بيانات الجدول `users`

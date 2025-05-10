@@ -1,36 +1,38 @@
 <?php
-// File: C:\Users\Zainon\Herd\car_rental\register.php
+session_start(); 
+require_once __DIR__ . '/includes/db_connect.php';
 
-// 1. إعدادات الصفحة والمتطلبات الأساسية
-$page_title = "Register New Account";
+$page_title = "Register New Account"; 
+
+require_once __DIR__ . '/includes/header.php'; // الهيدر قد يستخدم $page_title
 
 if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
+    header("Location: dashboard.php"); // أو APP_URL . 'dashboard.php'
     exit();
 }
 
+// 5. إعداد متغيرات النموذج والرسائل
 $error = '';
 $success = '';
 
 // متغيرات للاحتفاظ بقيم النموذج في حالة الخطأ (باستثناء كلمات المرور)
 $form_name = '';
 $form_email = '';
-$form_phone = ''; // حقل الهاتف أضفته كاختياري في النموذج
+$form_phone = '';
 $form_security_question = '';
 $form_security_answer = '';
 $form_terms_checked = false;
 
-
-// 2. معالجة نموذج التسجيل عند الإرسال
+// 6. معالجة نموذج التسجيل عند الإرسال
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // استرجاع القيم مع الاحتفاظ بها لإعادة ملء النموذج عند الخطأ
     $form_name = trim($_POST['name']);
     $form_email = trim($_POST['email']);
-    $password = $_POST['password']; // لا تقم بـ htmlspecialchars لكلمة المرور هنا
+    $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
-    $form_phone = isset($_POST['phone']) ? trim($_POST['phone']) : ''; // حقل الهاتف
+    $form_phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
     $form_security_question = trim($_POST['security_question']);
-    $form_security_answer = trim($_POST['security_answer']); // سيتم تجزئة هذا لاحقًا
+    $form_security_answer = trim($_POST['security_answer']);
     $form_terms_checked = isset($_POST['terms']);
 
     // التحقق من المدخلات
@@ -40,92 +42,70 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Invalid email format.";
     } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match.";
-    } elseif (strlen($password) < 8) { // زيادة طول كلمة المرور الموصى به
+    } elseif (strlen($password) < 8) {
         $error = "Password must be at least 8 characters long.";
     } elseif (!$form_terms_checked) {
          $error = "You must agree to the Terms and Conditions.";
     } else {
         try {
             // التحقق مما إذا كان البريد الإلكتروني موجودًا بالفعل
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email");
-            $stmt->bindParam(':email', $form_email);
-            $stmt->execute();
+            $stmt_check_email = $pdo->prepare("SELECT id FROM users WHERE email = :email");
+            $stmt_check_email->bindParam(':email', $form_email);
+            $stmt_check_email->execute();
 
-            if ($stmt->fetchColumn()) {
+            if ($stmt_check_email->fetchColumn()) {
                 $error = "Email address is already registered.";
             } else {
                 // تجزئة كلمة المرور
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                // *** هام: تجزئة إجابة الأمان ***
-                $hashed_security_answer = password_hash(strtolower(trim($form_security_answer)), PASSWORD_DEFAULT); // تحويل إلى أحرف صغيرة وإزالة المسافات قبل التجزئة للمقارنة
+                // تجزئة إجابة الأمان
+                $hashed_security_answer = password_hash(strtolower(trim($form_security_answer)), PASSWORD_DEFAULT);
 
                 // إدراج المستخدم الجديد
-                // تم إضافة حقل الهاتف `phone` (اختياري، لذا يمكن أن يكون NULL)
                 $insert_stmt = $pdo->prepare(
-                    "INSERT INTO users (name, email, password, phone, security_question, security_answer, registration_ip, user_agent) 
-                     VALUES (:name, :email, :password, :phone, :security_question, :security_answer, :registration_ip, :user_agent)"
+                    "INSERT INTO users (name, email, password, phone, security_question, security_answer)
+                     VALUES (:name, :email, :password, :phone, :security_question, :security_answer)"
                 );
                 
-                $registration_ip = $_SERVER['REMOTE_ADDR'];
-                $user_agent = $_SERVER['HTTP_USER_AGENT'];
-
                 $insert_stmt->bindParam(':name', $form_name);
                 $insert_stmt->bindParam(':email', $form_email);
                 $insert_stmt->bindParam(':password', $hashed_password);
-                $insert_stmt->bindParam(':phone', $form_phone, !empty($form_phone) ? PDO::PARAM_STR : PDO::PARAM_NULL); // التعامل مع قيمة الهاتف الاختيارية
+                $insert_stmt->bindParam(':phone', $form_phone, !empty($form_phone) ? PDO::PARAM_STR : PDO::PARAM_NULL);
                 $insert_stmt->bindParam(':security_question', $form_security_question);
-                $insert_stmt->bindParam(':security_answer', $hashed_security_answer); // استخدام الإجابة المجزأة
-                $insert_stmt->bindParam(':registration_ip', $registration_ip);
-                $insert_stmt->bindParam(':user_agent', $user_agent);
-
+                $insert_stmt->bindParam(':security_answer', $hashed_security_answer);
 
                 if ($insert_stmt->execute()) {
-                    $success = "Registration successful! You can now <a href='login.php'>login</a>.";
+                    $success = "Registration successful! You can now <a href='" . APP_URL . "login.php'>login</a>.";
                     // مسح قيم النموذج بعد النجاح
                     $form_name = $form_email = $form_phone = $form_security_question = $form_security_answer = '';
                     $form_terms_checked = false;
                     // لا تمسح $_POST بالكامل إذا كنت تريد عرض رسالة النجاح مع بقاء الصفحة كما هي
-                    // $_POST = array(); // يمكن استخدامها إذا كنت ستعيد التوجيه فورًا
                 } else {
                     $errorInfo = $insert_stmt->errorInfo();
-                    error_log("Registration Error: " . $errorInfo[2]); // سجل الخطأ الكامل
-                    $error = "Error registering user. Please try again. If the problem persists, contact support.";
+                    error_log("Registration DB Error: " . (isset($errorInfo[2]) ? $errorInfo[2] : 'Unknown error'));
+                    $error = "Error registering user. Please try again. If the problem persists, contact support. (Code: REG_EXEC_FAIL)";
                 }
             }
         } catch (PDOException $e) {
             error_log("Registration PDOException: " . $e->getMessage());
-            $error = "An error occurred during registration. Please contact support. (Code: DB_REG_FAIL)";
+            $error = "An error occurred during registration. Please contact support. (Code: DB_REG_PDO_FAIL)";
         }
     }
 }
-
-// 3. تضمين الهيدر
-require_once __DIR__ . '/includes/header.php';
 ?>
 
-        <?php // الهيدر والـ Navbar موجودان الآن في header.php ?>
-        <div class="register-container"> <?php // استخدام اسم الكلاس الجديد أو .login-container ?>
-            <h1>Create Account</h1> <?php // تغيير العنوان ليعكس التسجيل ?>
+        <?php // الهيدر والـ Navbar يفترض أنهما موجودان في header.php ?>
+        <div class="register-container">
+            <h1>Create Account</h1>
             <p class="register-text">Already have an account? <a href="<?php echo APP_URL; ?>login.php">Sign in here</a></p>
 
-            <?php /*
-            // يمكنك إزالة زر جوجل من صفحة التسجيل إذا لم يكن لديك تكامل فعلي معه
-            // أو تركه إذا كنت تخطط لإضافته لاحقًا.
-            <button class="google-btn">
-                Continue with Google
-            </button>
-
-            <div class="or-divider">
-                <span>or</span>
-            </div>
-            */ ?>
-
             <?php
-            if (!empty($error)) { // تحقق من أن الخطأ ليس فارغًا قبل عرضه
+            if (!empty($error)) {
                 echo '<p class="error-message">' . htmlspecialchars($error) . '</p>';
             }
-            if (!empty($success)) { // تحقق من أن النجاح ليس فارغًا قبل عرضه
-                echo '<p class="success-message">' . $success . '</p>'; // success message already contains HTML link
+            if (!empty($success)) {
+                // رسالة النجاح تحتوي على HTML (رابط تسجيل الدخول)، لذا لا تستخدم htmlspecialchars عليها
+                echo '<p class="success-message">' . $success . '</p>';
             }
             ?>
 
@@ -156,7 +136,7 @@ require_once __DIR__ . '/includes/header.php';
                     <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
                 </div>
 
-                 <div class="security-group">
+                 <div class="security-group form-group"> <?php // إضافة form-group لتناسق التباعد ?>
                     <label for="security_question">Security Question</label>
                     <select id="security_question" name="security_question" required>
                         <option value="">-- Select a question --</option>
@@ -167,14 +147,13 @@ require_once __DIR__ . '/includes/header.php';
                     </select>
                 </div>
 
-                 <div class="security-group">
+                 <div class="security-group form-group"> <?php // إضافة form-group لتناسق التباعد ?>
                     <label for="security_answer">Security Answer</label>
                     <input type="text" id="security_answer" name="security_answer" placeholder="Your answer (case-insensitive)" value="<?php echo htmlspecialchars($form_security_answer); ?>" required>
                     <small>This helps recover your account. Answer will be stored securely.</small>
                 </div>
 
-
-                <div class="checkbox-group">
+                <div class="checkbox-group form-group"> <?php // إضافة form-group لتناسق التباعد ?>
                     <input type="checkbox" id="terms" name="terms" <?php echo $form_terms_checked ? 'checked' : ''; ?> required>
                     <label for="terms">I agree to the <a href="<?php echo APP_URL; ?>terms.php" target="_blank">Terms and Conditions</a></label>
                 </div>
@@ -186,6 +165,6 @@ require_once __DIR__ . '/includes/header.php';
         </div>
 
 <?php
-// 4. تضمين الفوتر
+// 7. تضمين الفوتر المشترك
 require_once __DIR__ . '/includes/footer.php';
 ?>

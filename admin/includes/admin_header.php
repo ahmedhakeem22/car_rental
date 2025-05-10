@@ -3,7 +3,6 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../../includes/config.php'; // <-- هذا السطر ضروري
 require_once __DIR__ . '/../../includes/db_connect.php'; 
 
 if (!isset($page_title)) {
@@ -29,7 +28,6 @@ if (!isset($_SESSION['admin_id']) && $current_script !== 'admin_login.php') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet' />
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css' type='text/css' />
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>assets/css/styles.css">
     <link rel="stylesheet" href="<?php echo APP_URL; ?>assets/css/admin_styles.css">
     <?php
     if (isset($page_specific_css) && is_array($page_specific_css)) {

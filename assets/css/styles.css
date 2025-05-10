@@ -640,3 +640,54 @@ footer {
 .alert {
     font-size: 0.95rem;
 }
+/* Navbar Dropdown Menu Styling */
+/* هذا يستهدف القوائم المنسدلة داخل Navbar داكن (مثل الذي لديك) */
+.navbar-dark .navbar-nav .dropdown-menu {
+    background-color: #343a40; /* لون خلفية داكن للقائمة، يمكنك تغييره */
+    border: 1px solid rgba(0,0,0,.2); /* حدود أغمق قليلاً */
+    border-radius: 0.375rem; /* نفس تقريب حواف Bootstrap الافتراضي */
+    margin-top: 0.125rem; /* مسافة صغيرة من الأعلى */
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175); /* ظل خفيف */
+}
+
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item {
+    color: rgba(255, 255, 255, 0.85); /* لون نص فاتح (أبيض مع شفافية خفيفة) */
+    padding-top: 0.6rem; /* تعديل الحشوة العمودية */
+    padding-bottom: 0.6rem;
+    font-size: 0.95rem; /* تعديل حجم الخط قليلاً */
+}
+
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:hover,
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:focus {
+    color: #ffffff; /* لون نص أبيض ناصع عند المرور أو التركيز */
+    background-color: #007bff; /* لون خلفية مميز (أزرق Bootstrap الأساسي) */
+}
+
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item i.bi {
+    opacity: 0.9; /* شفافية خفيفة للأيقونات */
+    margin-right: 0.5rem; /* مسافة بعد الأيقونة */
+    width: 1.25em; /* لتوفير مساحة متناسقة للأيقونات */
+    text-align: center; /* محاذاة الأيقونات في الوسط إذا كانت مختلفة الأحجام */
+}
+
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:hover i.bi,
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:focus i.bi {
+    opacity: 1; /* إزالة الشفافية عند المرور */
+}
+
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.15); /* لون أفتح للخط الفاصل */
+}
+
+/* تخصيص عنصر تسجيل الخروج (text-danger) */
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item.text-danger {
+    color: #ffced3 !important; /* لون أحمر فاتح جدًا ليظهر على الخلفية الداكنة */
+}
+
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item.text-danger:hover,
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item.text-danger:focus {
+    color: #ffffff !important; /* نص أبيض عند المرور */
+    background-color: #c82333 !important; /* لون أحمر أغمق للخلفية عند المرور */
+    border-color: #bd2130 !important; /* (إذا كان هناك حدود) */
+}
+
