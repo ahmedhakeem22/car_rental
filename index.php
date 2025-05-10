@@ -11,10 +11,18 @@ try {
     error_log("Index page featured cars PDOException: " . $e->getMessage());
 }
 ?>
-
 <!-- قسم الهيرو (Hero Section) -->
 <header class="hero-section text-center text-white d-flex align-items-center justify-content-center">
-    <div class="container">
+    <!-- حاوية الشرائح -->
+    <div class="hero-slides-container">
+        <div class="hero-slide active" style="background-image: url('<?php echo APP_URL; ?>assets/images/1.png');"></div>
+        <div class="hero-slide" style="background-image: url('<?php echo APP_URL; ?>assets/images/2.png');"></div>
+        <div class="hero-slide" style="background-image: url('<?php echo APP_URL; ?>assets/images/3.png');"></div>
+        <!-- يمكنك إضافة المزيد من الشرائح هنا -->
+    </div>
+
+    <!-- محتوى الهيرو (فوق الشرائح) -->
+    <div class="hero-content-overlay container">
         <h1 class="display-3 fw-bold"><?php echo SITE_NAME; ?></h1>
         <p class="lead col-lg-8 mx-auto">Your journey begins here. Rent the perfect car for your next adventure with ease and confidence.</p>
         <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">

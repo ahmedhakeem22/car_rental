@@ -17,45 +17,28 @@ body {
     padding: 0 20px;
 }
 
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 40px;
-    background: linear-gradient(135deg, #1B2559, #0A122B);
-    padding: 15px 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+.navbar.navbar-dark.bg-dark {
+    border-bottom: 3px solid #007bff;
 }
 
+.navbar.navbar-dark.bg-dark .navbar-brand {
+    font-weight: 500;
+}
+
+.navbar.navbar-dark.bg-dark .nav-link {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.navbar.navbar-dark.bg-dark .nav-link:hover,
+.navbar.navbar-dark.bg-dark .nav-link.active {
+    color: #ffffff;
+}
 .logo img {
     height: 40px;
     width: auto;
     display: block;
 }
 
-.navbar ul {
-    display: flex;
-    list-style: none;
-    gap: 25px;
-    padding: 0;
-    margin: 0;
-}
-
-.navbar a {
-    text-decoration: none;
-    color: white;
-    font-weight: 500;
-    font-size: 16px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.navbar a:hover, .navbar a.active {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: #03a9f4;
-}
 
 .login-container {
     max-width: 450px;
@@ -372,24 +355,68 @@ footer {
     line-height: 1.5;
 }
 /* Hero Section */
+/* Hero Section */
 .hero-section {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('https://www.pngkey.com/png/detail/408-4083380_cars-hero-image-detailing-car-png.png');
+    position: relative; /* ضروري لتحديد موضع الشرائح المطلقة */
+    min-height: 65vh; 
+    padding: 5rem 0; /* يمكنك تعديل هذا إذا كان المحتوى لا يتمركز بشكل جيد */
+    overflow: hidden; /* لمنع أي تجاوزات من الشرائح */
+    /* d-flex, align-items-center, justify-content-center ستبقى لتوسيط hero-content-overlay */
+}
+
+.hero-slides-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* خلف محتوى الهيرو */
+}
+
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-size: cover; 
     background-position: center center; 
     background-repeat: no-repeat;
-    min-height: 65vh; 
-    padding: 5rem 0;
+    opacity: 0; /* إخفاء جميع الشرائح افتراضيًا */
+    transition: opacity 1s ease-in-out; /* تأثير التلاشي */
 }
 
-.hero-section h1 {
+.hero-slide.active {
+    opacity: 1; /* إظهار الشريحة النشطة */
+}
+
+/* إضافة التراكب الداكن لكل شريحة بشكل منفصل */
+.hero-slide::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55));
+    z-index: 1; /* فوق صورة الشريحة مباشرة */
+}
+
+
+.hero-content-overlay {
+    position: relative; /* للتأكد من أنه فوق الشرائح */
+    z-index: 2; /* فوق حاوية الشرائح والتراكب الخاص بها */
+}
+
+.hero-section h1 { /* ينطبق على h1 داخل hero-content-overlay */
     font-size: 3.2rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
 }
 
-.hero-section .lead {
+.hero-section .lead { /* ينطبق على .lead داخل hero-content-overlay */
     font-size: 1.2rem;
     margin-bottom: 2.5rem;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); /* ظل للنص */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .hero-section .btn-primary {
@@ -400,7 +427,6 @@ footer {
     border-width: 2px;
     font-weight: 500;
 }
-
 /* How It Works Section */
 #how-it-works i.display-4 {
     font-size: 3.5rem !important; /* حجم الأيقونات */
@@ -640,54 +666,3 @@ footer {
 .alert {
     font-size: 0.95rem;
 }
-/* Navbar Dropdown Menu Styling */
-/* هذا يستهدف القوائم المنسدلة داخل Navbar داكن (مثل الذي لديك) */
-.navbar-dark .navbar-nav .dropdown-menu {
-    background-color: #343a40; /* لون خلفية داكن للقائمة، يمكنك تغييره */
-    border: 1px solid rgba(0,0,0,.2); /* حدود أغمق قليلاً */
-    border-radius: 0.375rem; /* نفس تقريب حواف Bootstrap الافتراضي */
-    margin-top: 0.125rem; /* مسافة صغيرة من الأعلى */
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175); /* ظل خفيف */
-}
-
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item {
-    color: rgba(255, 255, 255, 0.85); /* لون نص فاتح (أبيض مع شفافية خفيفة) */
-    padding-top: 0.6rem; /* تعديل الحشوة العمودية */
-    padding-bottom: 0.6rem;
-    font-size: 0.95rem; /* تعديل حجم الخط قليلاً */
-}
-
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:hover,
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:focus {
-    color: #ffffff; /* لون نص أبيض ناصع عند المرور أو التركيز */
-    background-color: #007bff; /* لون خلفية مميز (أزرق Bootstrap الأساسي) */
-}
-
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item i.bi {
-    opacity: 0.9; /* شفافية خفيفة للأيقونات */
-    margin-right: 0.5rem; /* مسافة بعد الأيقونة */
-    width: 1.25em; /* لتوفير مساحة متناسقة للأيقونات */
-    text-align: center; /* محاذاة الأيقونات في الوسط إذا كانت مختلفة الأحجام */
-}
-
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:hover i.bi,
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:focus i.bi {
-    opacity: 1; /* إزالة الشفافية عند المرور */
-}
-
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-divider {
-    border-top: 1px solid rgba(255, 255, 255, 0.15); /* لون أفتح للخط الفاصل */
-}
-
-/* تخصيص عنصر تسجيل الخروج (text-danger) */
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item.text-danger {
-    color: #ffced3 !important; /* لون أحمر فاتح جدًا ليظهر على الخلفية الداكنة */
-}
-
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item.text-danger:hover,
-.navbar-dark .navbar-nav .dropdown-menu .dropdown-item.text-danger:focus {
-    color: #ffffff !important; /* نص أبيض عند المرور */
-    background-color: #c82333 !important; /* لون أحمر أغمق للخلفية عند المرور */
-    border-color: #bd2130 !important; /* (إذا كان هناك حدود) */
-}
-

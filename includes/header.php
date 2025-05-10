@@ -52,15 +52,7 @@ if (!isset($page_title)) {
                         <li class="nav-item">
                             <a class="nav-link <?php echo (in_array(basename($_SERVER['PHP_SELF']), ['cars.php', 'car_details.php'])) ? 'active' : ''; ?>" href="<?php echo APP_URL; ?>cars.php">Cars</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Discover</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Gallery</a>
-                        </li>
-                         <li class="nav-item">
-                            <a class="nav-link" href="#">Contact Us</a>
-                        </li>
+                      
                     </ul>
                     <ul class="navbar-nav">
                         <?php if (isset($_SESSION['admin_id'])): ?>
