@@ -1,4 +1,7 @@
 <?php
+// Start output buffering at the very beginning of the script
+ob_start();
+
 $page_title = "Manage Cars";
 require_once __DIR__ . '/includes/admin_header.php';
 
@@ -40,7 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_car_id'])) {
         } catch (PDOException $e) {
             $_SESSION['car_action_error'] = "Database error deleting car: " . $e->getMessage();
         }
+        
+        // Use a relative URL to avoid problems
         header("Location: " . APP_URL . "admin/manage_cars.php");
+        ob_end_flush(); // End output buffering and send content
         exit();
     }
 }
@@ -135,4 +141,8 @@ try {
 
 <?php
 require_once __DIR__ . '/includes/admin_footer.php';
+// Make sure to flush output buffer at the end of the script if not already done
+if (ob_get_level() > 0) {
+    ob_end_flush();
+}
 ?>

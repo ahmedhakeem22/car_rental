@@ -1,4 +1,7 @@
 <?php
+// Start output buffering at the very beginning
+ob_start();
+
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
@@ -14,6 +17,7 @@ if (!isset($_SESSION['admin_id']) && $current_script !== 'admin_login.php') {
     if ($current_script !== 'admin_setup.php') {
         $_SESSION['admin_error'] = "Please log in to access the admin area.";
         header("Location: " . APP_URL . "admin/admin_login.php");
+        ob_end_clean(); // Clean the buffer before exit
         exit();
     }
 }
@@ -96,4 +100,6 @@ if (!isset($_SESSION['admin_id']) && $current_script !== 'admin_login.php') {
             </div>
         </nav>
         <?php endif; ?>
-        <main class="container-fluid admin-page-content flex-grow-1 py-3">
+        <main class="container-fluid admin-page-content flex-grow-1 py-3"><?php
+// We don't want to end output buffering here - we'll do it at the end of each page
+?>
