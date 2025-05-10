@@ -1,4 +1,16 @@
 <?php
+
+session_start();
+
+// Include database connection
+require_once __DIR__ . '/includes/db_connect.php';
+
+// Define constants if not already defined
+if (!defined('APP_URL')) {
+    define('APP_URL', '/car_rental/'); // Adjust this to match your site's base URL
+}
+
+
 $page_title = "Forgot Your Password";
 if (isset($_SESSION['user_id'])) {
     header("Location: " . APP_URL . "dashboard.php");

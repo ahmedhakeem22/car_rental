@@ -1,5 +1,13 @@
 <?php
-// File: C:\Users\Zainon\Herd\car_rental\reset_password.php
+session_start();
+
+// Include database connection
+require_once __DIR__ . '/includes/db_connect.php';
+
+// Define constants if not already defined
+if (!defined('APP_URL')) {
+    define('APP_URL', '/car_rental/'); // Adjust this to match your site's base URL
+}
 
 $page_title = "Reset Your Password";
 
