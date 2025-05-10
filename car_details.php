@@ -1,6 +1,6 @@
 <?php
 $page_title = "Car Details";
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/header.php'; // header.php سيحتاج أيضًا لتضمين CSS الخاص بـ Mapbox
 
 if (!isset($_GET['id']) || !filter_var($_GET['id'], FILTER_VALIDATE_INT)) {
     $_SESSION['message'] = ['type' => 'danger', 'text' => 'Invalid car ID.'];
@@ -11,11 +11,9 @@ $car_id = (int)$_GET['id'];
 $current_user_id = $_SESSION['user_id'] ?? null;
 
 try {
-    $stmt = $pdo->prepare("SELECT c.*, AVG(r.rating) as calculated_avg_rating, COUNT(r.id) as calculated_total_reviews 
+    $stmt = $pdo->prepare("SELECT c.*, COALESCE(c.average_rating, 0) as calculated_avg_rating, COALESCE(c.total_reviews, 0) as calculated_total_reviews 
                            FROM cars c 
-                           LEFT JOIN reviews r ON c.id = r.car_id 
-                           WHERE c.id = ? 
-                           GROUP BY c.id");
+                           WHERE c.id = ?");
     $stmt->execute([$car_id]);
     $car = $stmt->fetch();
 
@@ -35,8 +33,8 @@ try {
     $stmt_reviews->execute([$car_id]);
     $reviews = $stmt_reviews->fetchAll();
 
-     $user_can_review = false;
-    $rental_id_for_review = null; // تهيئة المتغير
+    $user_can_review = false;
+    $rental_id_for_review = null;
     if ($current_user_id) {
         $stmt_check_review_eligibility = $pdo->prepare("
             SELECT ren.id AS eligible_rental_id 
@@ -54,10 +52,9 @@ try {
         $eligible_rental = $stmt_check_review_eligibility->fetch();
         if ($eligible_rental) {
             $user_can_review = true;
-            $rental_id_for_review = $eligible_rental['eligible_rental_id']; // <-- التصحيح هنا
+            $rental_id_for_review = $eligible_rental['eligible_rental_id'];
         }
     }
-
 
 } catch (PDOException $e) {
     $_SESSION['message'] = ['type' => 'danger', 'text' => 'Error fetching car details or reviews: ' . $e->getMessage()];
@@ -70,15 +67,11 @@ $min_end_date = date('Y-m-d', strtotime('+1 day'));
 $average_rating = $car['calculated_avg_rating'] ? round($car['calculated_avg_rating'], 1) : 'N/A';
 $total_reviews_display = $car['calculated_total_reviews'] ?? 0;
 
-    $stmt_reviews = $pdo->prepare("
-        SELECT rev.*, u.name as reviewer_name 
-        FROM reviews rev 
-        JOIN users u ON rev.user_id = u.id 
-        WHERE rev.car_id = ? 
-        ORDER BY rev.created_at DESC
-    ");
-    $stmt_reviews->execute([$car_id]);
-    $reviews = $stmt_reviews->fetchAll();
+$pickup_city = DEFAULT_PICKUP_CITY;
+$pickup_lng = DEFAULT_PICKUP_LNG; // Mapbox uses Lng, Lat order
+$pickup_lat = DEFAULT_PICKUP_LAT;
+$openweathermap_api_key = OPENWEATHERMAP_API_KEY;
+$mapbox_access_token = MAPBOX_ACCESS_TOKEN; // جلب مفتاح Mapbox
 
 ?>
 
@@ -110,13 +103,33 @@ $total_reviews_display = $car['calculated_total_reviews'] ?? 0;
         </div>
     <?php endif; ?>
 
-
     <div class="row">
         <div class="col-lg-7 mb-4">
             <img src="<?php echo APP_URL . 'assets/images/cars/' . (!empty($car['image']) ? htmlspecialchars($car['image']) : 'default-car.png'); ?>" class="img-fluid rounded shadow-sm" alt="<?php echo htmlspecialchars($car['brand'] . ' ' . $car['model']); ?>">
+        
+            <div class="mt-4 card shadow-sm location-weather-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Pickup Location & Weather</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h6><i class="bi bi-pin-map me-1"></i>Location: <?php echo htmlspecialchars($pickup_city); ?></h6>
+                            <div id="mapbox-map" style="height: 250px; width: 100%; border-radius: 0.25rem;"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-thermometer-half me-1"></i>Current Weather</h6>
+                            <div id="weather-info">
+                                <p class="text-muted">Loading weather data...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
         <div class="col-lg-5">
-            <div class="card shadow-sm">
+             <div class="card shadow-sm">
                 <div class="card-body">
                     <h1 class="card-title h2 mb-2"><?php echo htmlspecialchars($car['brand'] . ' ' . $car['model']); ?></h1>
                     <p class="card-text text-muted mb-2">Year: <?php echo htmlspecialchars($car['year']); ?></p>
@@ -127,9 +140,9 @@ $total_reviews_display = $car['calculated_total_reviews'] ?? 0;
                                     <i class="bi <?php echo ($i <= floor($average_rating)) ? 'bi-star-fill text-warning' : (($i - 0.5 <= $average_rating) ? 'bi-star-half text-warning' : 'bi-star text-warning'); ?>"></i>
                                 <?php endfor; ?>
                             </div>
-                            <span class="text-muted">(<?php echo htmlspecialchars($average_rating); ?> based on <?php echo $total_reviews_display; ?> reviews)</span>
+                            <span class="text-muted small">(<?php echo htmlspecialchars($average_rating); ?> from <?php echo $total_reviews_display; ?> reviews)</span>
                         <?php else: ?>
-                            <span class="text-muted">No reviews yet.</span>
+                            <span class="text-muted small">No reviews yet.</span>
                         <?php endif; ?>
                     </div>
 
@@ -186,15 +199,15 @@ $total_reviews_display = $car['calculated_total_reviews'] ?? 0;
 
     <div class="reviews-section">
         <h3 class="mb-4">Customer Reviews & Ratings</h3>
-            <?php if ($user_can_review && $rental_id_for_review !== null): ?>
+        <?php if ($user_can_review && $rental_id_for_review !== null): ?>
             <div class="card mb-4 shadow-sm">
                 <div class="card-header bg-light">
-                    <h5>Write a Review for this Car (Rental ID: #<?php echo $rental_id_for_review; ?>)</h5>
+                    <h5>Write a Review (Rental ID: #<?php echo $rental_id_for_review; ?>)</h5>
                 </div>
                 <div class="card-body">
                     <form action="<?php echo APP_URL; ?>submit_review.php" method="POST">
                         <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
-                        <input type="hidden" name="rental_id" value="<?php echo $rental_id_for_review; ?>"> 
+                        <input type="hidden" name="rental_id" value="<?php echo $rental_id_for_review; ?>">
                         <div class="mb-3">
                             <label for="rating" class="form-label">Your Rating (1-5 Stars)</label>
                             <select class="form-select" id="rating" name="rating" required>
@@ -220,7 +233,6 @@ $total_reviews_display = $car['calculated_total_reviews'] ?? 0;
             <p class="text-muted">Please <a href="<?php echo APP_URL; ?>login.php?redirect=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>">login</a> to write a review after completing a rental.</p>
         <?php endif; ?>
 
-
         <?php if (empty($reviews)): ?>
             <p class="text-muted">Be the first to review this car!</p>
         <?php else: ?>
@@ -244,13 +256,17 @@ $total_reviews_display = $car['calculated_total_reviews'] ?? 0;
                             <button class="btn btn-sm btn-outline-danger dislike-btn" data-review-id="<?php echo $review['id']; ?>">
                                 <i class="bi bi-hand-thumbs-down"></i> Dislike <span class="dislike-count">(<?php echo htmlspecialchars($review['dislikes_count'] ?? 0); ?>)</span>
                             </button>
-                        </div>                        </div>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
 </div>
+
+<?php
+require_once __DIR__ . '/includes/footer.php';
+?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -297,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
             calculateRental();
         });
         endDateInput.addEventListener('change', calculateRental);
-        calculateRental(); 
+        calculateRental();
     }
 
     async function handleVote(reviewId, voteType, buttonElement) {
@@ -306,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = '<?php echo APP_URL . "login.php?redirect=" . urlencode($_SERVER["REQUEST_URI"]); ?>';
             return;
         }
-
         try {
             const response = await fetch('<?php echo APP_URL; ?>process_review_vote.php', {
                 method: 'POST',
@@ -314,91 +329,128 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    review_id: reviewId,
-                    vote_type: voteType
-                })
+                body: JSON.stringify({ review_id: reviewId, vote_type: voteType })
             });
-
             const result = await response.json();
-
             if (result.success) {
                 const reviewCardBody = buttonElement.closest('.card-body');
                 const likeButton = reviewCardBody.querySelector('.like-btn');
                 const dislikeButton = reviewCardBody.querySelector('.dislike-btn');
-                const likeCountSpan = likeButton.querySelector('.like-count');
-                const dislikeCountSpan = dislikeButton.querySelector('.dislike-count');
-
-                likeCountSpan.textContent = `(${result.likes_count})`;
-                dislikeCountSpan.textContent = `(${result.dislikes_count})`;
-
-                likeButton.classList.remove('btn-success', 'text-white');
+                likeButton.querySelector('.like-count').textContent = `(${result.likes_count})`;
+                dislikeButton.querySelector('.dislike-count').textContent = `(${result.dislikes_count})`;
+                likeButton.classList.remove('btn-success', 'text-white', 'active');
                 likeButton.classList.add('btn-outline-success');
-                dislikeButton.classList.remove('btn-danger', 'text-white');
+                dislikeButton.classList.remove('btn-danger', 'text-white', 'active');
                 dislikeButton.classList.add('btn-outline-danger');
-
                 if (result.user_vote === 'like') {
                     likeButton.classList.remove('btn-outline-success');
-                    likeButton.classList.add('btn-success', 'text-white');
+                    likeButton.classList.add('btn-success', 'text-white', 'active');
                 } else if (result.user_vote === 'dislike') {
                     dislikeButton.classList.remove('btn-outline-danger');
-                    dislikeButton.classList.add('btn-danger', 'text-white');
+                    dislikeButton.classList.add('btn-danger', 'text-white', 'active');
                 }
             } else {
-                alert(result.message || 'An error occurred.');
+                alert(result.message || 'An error occurred while voting.');
             }
         } catch (error) {
             console.error('Error processing vote:', error);
-            alert('An error occurred while processing your vote. Please try again.');
+            alert('An error occurred. Please check console for details.');
         }
     }
-
     document.querySelectorAll('.like-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const reviewId = this.dataset.reviewId;
-            handleVote(reviewId, 'like', this);
-        });
+        button.addEventListener('click', function() { handleVote(this.dataset.reviewId, 'like', this); });
     });
-
     document.querySelectorAll('.dislike-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const reviewId = this.dataset.reviewId;
-            handleVote(reviewId, 'dislike', this);
-        });
+        button.addEventListener('click', function() { handleVote(this.dataset.reviewId, 'dislike', this); });
     });
-    
-    function updateUserVoteStatus() {
+    async function fetchUserVoteStatus(reviewId) {
         const currentUserId = <?php echo $_SESSION['user_id'] ?? 'null'; ?>;
-        if (!currentUserId) return;
+        if (!currentUserId) return null;
+        try {
+            const response = await fetch(`<?php echo APP_URL; ?>get_user_vote_status.php?review_id=${reviewId}`);
+            const data = await response.json();
+            if (data.success) return data.vote_type;
+        } catch (error) { console.error("Error fetching user vote status for review " + reviewId + ":", error); }
+        return null;
+    }
+    document.querySelectorAll('.review-actions').forEach(async (actionsDiv) => {
+        const likeButton = actionsDiv.querySelector('.like-btn');
+        const dislikeButton = actionsDiv.querySelector('.dislike-btn');
+        if (!likeButton) return; 
+        const reviewId = likeButton.dataset.reviewId;
+        const userVote = await fetchUserVoteStatus(reviewId);
+        if (userVote === 'like') {
+            likeButton.classList.remove('btn-outline-success');
+            likeButton.classList.add('btn-success', 'text-white', 'active');
+        } else if (userVote === 'dislike') {
+            dislikeButton.classList.remove('btn-outline-danger');
+            dislikeButton.classList.add('btn-danger', 'text-white', 'active');
+        }
+    });
 
-        document.querySelectorAll('.review-actions').forEach(async (actionsDiv) => {
-            const reviewId = actionsDiv.querySelector('.like-btn')?.dataset.reviewId;
-            if (!reviewId) return;
+    function fetchWeatherData() {
+        const weatherInfoDiv = document.getElementById('weather-info');
+        if (!weatherInfoDiv) return;
+        const lat = <?php echo $pickup_lat; ?>;
+        const lon = <?php echo $pickup_lng; ?>;
+        const apiKey = '<?php echo $openweathermap_api_key; ?>';
+        if (!apiKey || apiKey === 'YOUR_OPENWEATHERMAP_API_KEY') {
+            weatherInfoDiv.innerHTML = `<p class="text-warning small">OpenWeatherMap API key not configured.</p>`;
+            return;
+        }
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.cod === 200) {
+                    weatherInfoDiv.innerHTML = `
+                        <p class="lead mb-1">${data.name}</p>
+                        <p class="mb-1"><img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" alt="${data.weather[0].description}" class="weather-icon"> <span class="h5">${Math.round(data.main.temp)}°C</span>, <span class="weather-description">${data.weather[0].description}</span></p>
+                        <p class="mb-0 small text-muted">Humidity: ${data.main.humidity}%, Wind: ${data.wind.speed.toFixed(1)} m/s</p>
+                    `;
+                } else {
+                    weatherInfoDiv.innerHTML = `<p class="text-danger small">Weather: ${data.message || 'Unavailable'}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching weather data:', error);
+                weatherInfoDiv.innerHTML = '<p class="text-danger small">Error loading weather data.</p>';
+            });
+    }
+    fetchWeatherData();
 
-            try {
-                 const response = await fetch(`<?php echo APP_URL; ?>get_user_vote_status.php?review_id=${reviewId}`);
-                 const data = await response.json();
-                 if (data.success && data.vote_type) {
-                    const likeButton = actionsDiv.querySelector('.like-btn');
-                    const dislikeButton = actionsDiv.querySelector('.dislike-btn');
-                    if (data.vote_type === 'like' && likeButton) {
-                        likeButton.classList.remove('btn-outline-success');
-                        likeButton.classList.add('btn-success', 'text-white');
-                    } else if (data.vote_type === 'dislike' && dislikeButton) {
-                        dislikeButton.classList.remove('btn-outline-danger');
-                        dislikeButton.classList.add('btn-danger', 'text-white');
-                    }
-                 }
-            } catch(error) {
-                console.error("Error fetching user vote status:", error);
-            }
+    function initMapbox() {
+        const mapDiv = document.getElementById('mapbox-map');
+        const accessToken = '<?php echo $mapbox_access_token; ?>';
+
+        if (!mapDiv) return;
+        if (!accessToken || accessToken === 'pk.YOUR_MAPBOX_PUBLIC_ACCESS_TOKEN_HERE') {
+            mapDiv.innerHTML = '<p class="text-center text-warning p-3 small bg-light rounded">Mapbox Access Token not configured.</p>';
+            mapDiv.style.display = 'flex';
+            mapDiv.style.alignItems = 'center';
+            mapDiv.style.justifyContent = 'center';
+            return;
+        }
+
+        mapboxgl.accessToken = accessToken;
+        const map = new mapboxgl.Map({
+            container: 'mapbox-map',
+            style: 'mapbox://styles/mapbox/streets-v12', 
+            center: [<?php echo $pickup_lng; ?>, <?php echo $pickup_lat; ?>], 
+            zoom: 13 
+        });
+
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        new mapboxgl.Marker()
+            .setLngLat([<?php echo $pickup_lng; ?>, <?php echo $pickup_lat; ?>])
+            .setPopup(new mapboxgl.Popup().setText('<?php echo htmlspecialchars($pickup_city); ?> Pickup Location'))
+            .addTo(map);
+        
+        map.on('load', function () {
+            map.resize(); 
         });
     }
-    updateUserVoteStatus();
-
+    initMapbox();
 });
 </script>
-
-<?php
-require_once __DIR__ . '/includes/footer.php';
-?>

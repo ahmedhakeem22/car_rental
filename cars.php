@@ -38,14 +38,15 @@ try {
         </div>
     <?php else: ?>
         <?php foreach ($cars as $car): ?>
+            <?php $is_car_unavailable = (!$car['is_available'] || $car['quantity'] <= 0); ?>
             <div class="col">
-                <div class="card h-100 shadow-sm car-card-hover <?php echo (!$car['is_available'] || $car['quantity'] <= 0) ? 'border-danger' : ''; ?>">
-                    <a href="<?php echo APP_URL . 'car_details.php?id=' . $car['id']; ?>">
+                <div class="card h-100 shadow-sm car-card-hover <?php echo $is_car_unavailable ? 'is-unavailable border-danger' : ''; ?>">
+                    <a href="<?php echo APP_URL . 'car_details.php?id=' . $car['id']; ?>" class="<?php echo $is_car_unavailable ? 'pe-none' : ''; ?>">
                         <img src="<?php echo APP_URL . 'assets/images/cars/' . (!empty($car['image']) ? htmlspecialchars($car['image']) : 'default-car.png'); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($car['brand'] . ' ' . $car['model']); ?>" style="height: 200px; object-fit: cover;">
                     </a>
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">
-                             <a href="<?php echo APP_URL . 'car_details.php?id=' . $car['id']; ?>" class="text-decoration-none text-dark">
+                             <a href="<?php echo APP_URL . 'car_details.php?id=' . $car['id']; ?>" class="text-decoration-none text-dark <?php echo $is_car_unavailable ? 'pe-none' : ''; ?>">
                                 <?php echo htmlspecialchars($car['brand'] . ' ' . $car['model']); ?>
                             </a>
                         </h5>
@@ -65,15 +66,15 @@ try {
                         <p class="card-text flex-grow-1 small d-none d-md-block"><?php echo nl2br(htmlspecialchars(substr($car['description'], 0, 70))) . (strlen($car['description']) > 70 ? '...' : ''); ?></p>
                         <p class="card-text h5 mt-auto text-primary">$<?php echo htmlspecialchars(number_format($car['price_per_day'], 2)); ?> <small class="text-muted fs-6">/ day</small></p>
                         
-                        <?php if (!$car['is_available'] || $car['quantity'] <= 0): ?>
+                        <?php if ($is_car_unavailable): ?>
                             <p class="text-danger fw-bold mt-2 mb-0 small">Out of Stock</p>
                         <?php else: ?>
                             <p class="text-success fw-bold mt-2 mb-0 small">Available (<?php echo htmlspecialchars($car['quantity']); ?> left)</p>
                         <?php endif; ?>
                     </div>
                      <div class="card-footer bg-transparent border-top-0 text-center pb-3">
-                         <a href="<?php echo APP_URL . 'car_details.php?id=' . $car['id']; ?>" class="btn btn-sm <?php echo (!$car['is_available'] || $car['quantity'] <= 0) ? 'btn-outline-secondary disabled' : 'btn-primary'; ?> w-100">
-                            <?php echo (!$car['is_available'] || $car['quantity'] <= 0) ? 'View Details' : 'Book Now'; ?>
+                         <a href="<?php echo APP_URL . 'car_details.php?id=' . $car['id']; ?>" class="btn btn-sm <?php echo $is_car_unavailable ? 'btn-outline-secondary disabled' : 'btn-primary'; ?> w-100">
+                            <?php echo $is_car_unavailable ? 'View Details' : 'Book Now'; ?>
                          </a>
                     </div>
                 </div>

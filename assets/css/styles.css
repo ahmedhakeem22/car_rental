@@ -451,3 +451,192 @@ footer {
     padding: 0.75rem 1.5rem;
     font-size: 1.1rem;
 }
+/* assets/css/styles.css */
+
+/* ... (جميع الستايلات الموجودة مسبقًا) ... */
+
+
+/* Styles for Car Details Page API Integration Section */
+.location-weather-card .card-header {
+    background-color: #eef3f7; /* لون خلفية أفتح قليلاً للهيدر */
+    border-bottom: 1px solid #dee2e6;
+}
+
+.location-weather-card .card-header h5 {
+    color: #343a40; /* لون أغمق لعنوان الهيدر */
+}
+
+#map {
+    border: 1px solid #ced4da; /* حدود بسيطة للخريطة */
+    border-radius: 0.375rem; /* تطابق مع عناصر النموذج */
+    min-height: 250px; /* ضمان ارتفاع أدنى حتى لو فشل التحميل */
+}
+
+#weather-info {
+    padding: 10px;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa; /* خلفية فاتحة لمعلومات الطقس */
+    min-height: 150px; /* ارتفاع أدنى لعرض المحتوى أو رسالة التحميل */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* محاذاة المحتوى في الوسط عموديًا */
+}
+
+#weather-info p {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+#weather-info p.lead { /* لتكبير اسم المدينة قليلاً */
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #212529;
+}
+
+#weather-info img.weather-icon {
+    width: 50px;
+    height: 50px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+#weather-info .weather-description {
+    text-transform: capitalize;
+}
+
+#weather-info .text-muted,
+#weather-info .small {
+    font-size: 0.85rem;
+    color: #6c757d !important;
+}
+
+#weather-info .text-danger {
+    font-weight: 500;
+}
+
+
+/* Review Section Enhancements */
+.reviews-section h3 {
+    color: #343a40;
+    border-bottom: 2px solid #007bff; /* خط سفلي مميز لعنوان القسم */
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem !important; /* زيادة المسافة بعد العنوان */
+}
+
+.reviews-section .card {
+    border: 1px solid #e9ecef; /* حدود أفتح قليلاً لبطاقات المراجعة */
+}
+
+.reviews-section .card-header h5 {
+    color: #495057;
+}
+
+.reviews-section .card-subtitle .fw-bold {
+    color: #212529;
+}
+
+.reviews-section .card-text {
+    line-height: 1.6;
+    font-size: 0.95rem;
+    color: #495057;
+}
+
+/* Star Rating Display */
+.star-rating-display i.bi {
+    font-size: 1.1rem; /* حجم النجوم */
+    margin-right: 1px;
+}
+
+/* Review Action Buttons (Like/Dislike) */
+.review-actions .btn {
+    font-size: 0.8rem; /* تصغير حجم الخط للأزرار */
+    padding: 0.25rem 0.6rem; /* تصغير الحشوة */
+    display: inline-flex;
+    align-items: center;
+}
+
+.review-actions .btn i.bi {
+    font-size: 0.9rem; /* حجم أيقونات الأزرار */
+    margin-right: 0.3rem;
+}
+
+.review-actions .like-btn.active,
+.review-actions .like-btn.btn-success { /* for when it's already liked */
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+}
+.review-actions .like-btn.active:hover,
+.review-actions .like-btn.btn-success:hover {
+    background-color: #1e7e34 !important;
+    border-color: #1c7430 !important;
+}
+
+
+.review-actions .dislike-btn.active,
+.review-actions .dislike-btn.btn-danger { /* for when it's already disliked */
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+.review-actions .dislike-btn.active:hover,
+.review-actions .dislike-btn.btn-danger:hover {
+    background-color: #bd2130 !important;
+    border-color: #b21f2d !important;
+}
+
+.review-actions .like-count,
+.review-actions .dislike-count {
+    font-size: 0.8rem;
+    margin-left: 0.2rem;
+}
+
+/* Dimming unavailable cars (enhancement from previous request) */
+.card.border-danger .card-img-top,
+.unavailable-car-overlay { /* كلاس جديد يمكن إضافته */
+    filter: grayscale(80%) opacity(0.7); /* تأثير رمادي وخفيف */
+    position: relative;
+}
+
+/* يمكن إضافة نص فوق السيارة غير المتاحة */
+.unavailable-car-overlay::after {
+    content: 'Currently Unavailable';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    z-index: 10;
+}
+
+/* استهداف البطاقة بأكملها إذا كانت السيارة غير متاحة */
+.car-card-hover.is-unavailable {
+    pointer-events: none; /* لمنع التفاعل مع البطاقة */
+    opacity: 0.7;
+}
+.car-card-hover.is-unavailable .btn-primary,
+.car-card-hover.is-unavailable .btn-outline-primary {
+    visibility: hidden; /* إخفاء الأزرار */
+}
+
+/* Booking form styling (example) */
+#rentalForm .form-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+#rentalForm .small {
+    color: #495057;
+}
+#rentalForm .small .fw-bold {
+    color: #0d6efd; /* لون لتمييز السعر والأيام */
+}
+
+/* Message styling (ensure these are well-styled) */
+.alert {
+    font-size: 0.95rem;
+}

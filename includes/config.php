@@ -7,7 +7,7 @@ define('DB_NAME', 'cars');
 
 
 define('OPENWEATHERMAP_API_KEY', 'bfcd42eac679db58901d2c1223f6a521');
-define('GOOGLE_MAPS_API_KEY', 'YOUR_GOOGLE_MAPS_API_KEY'); 
+define('MAPBOX_ACCESS_TOKEN', 'pk.eyJ1IjoiYWhtZWQ4OTg5IiwiYSI6ImNtYWljNGxxejBpemIyaXNqcjNkaHkzMDQifQ.NWJStZBxYxubBDDivPZc7Q'); // <-- ضع مفتاحك هنا
 
 define('APP_URL', 'http://car_rental.test/'); 
 define('SITE_NAME', 'DriveEasy Rentals');

@@ -14,6 +14,9 @@ if (!isset($page_title)) {
     <title><?php echo htmlspecialchars($page_title); ?> - <?php echo SITE_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet' />
+
     <link rel="stylesheet" href="<?php echo APP_URL; ?>assets/css/styles.css">
     <?php
     if (isset($page_specific_css) && is_array($page_specific_css)) {
@@ -42,7 +45,7 @@ if (!isset($page_title)) {
                             <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'active' : ''; ?>" href="<?php echo APP_URL; ?>index.php">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'cars.php') ? 'active' : ''; ?>" href="<?php echo APP_URL; ?>cars.php">Cars</a>
+                            <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'cars.php' || basename($_SERVER['PHP_SELF']) == 'car_details.php') ? 'active' : ''; ?>" href="<?php echo APP_URL; ?>cars.php">Cars</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#">Discover</a>
@@ -64,9 +67,7 @@ if (!isset($page_title)) {
                                     <li><a class="dropdown-item" href="<?php echo APP_URL; ?>admin/admin_dashboard.php"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</a></li>
                                     <li><a class="dropdown-item" href="<?php echo APP_URL; ?>admin/manage_cars.php"><i class="bi bi-car-front-fill me-2"></i>Manage Cars</a></li>
                                     <li><a class="dropdown-item" href="<?php echo APP_URL; ?>admin/manage_rentals.php"><i class="bi bi-calendar-check me-2"></i>Manage Rentals</a></li>
-                                    <li><a class="dropdown-item" href="<?php echo APP_URL; ?>admin/manage_users.php"><i class="bi bi-people-fill me-2"></i>Manage Users</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="<?php echo APP_URL; ?>admin/admin_profile.php"><i class="bi bi-person-circle me-2"></i><?php echo htmlspecialchars($_SESSION['admin_username']); ?></a></li>
                                     <li><a class="dropdown-item text-danger" href="<?php echo APP_URL; ?>admin/admin_logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
                                 </ul>
                             </li>
@@ -101,4 +102,4 @@ if (!isset($page_title)) {
                 </div>
             </div>
         </nav>
-        <div class="container page-content flex-grow-1">
+        <div class="container page-content flex-grow-1 py-3">

@@ -46,7 +46,6 @@ require_once __DIR__ . '/includes/admin_header.php';
                 ?>
                 <h5 class="card-title"><?php echo $total_users; ?></h5>
                 <p class="card-text">Total registered client users.</p>
-                <a href="<?php echo APP_URL; ?>admin/manage_users.php" class="text-white">View Details »</a>
             </div>
         </div>
     </div>
